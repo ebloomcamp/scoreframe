@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join the Beta — ScoreFrame</title>
+  <meta name="description" content="Become a ScoreFrame beta tester. Help shape the app before the public launch." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deepest: #0A0A0C;
+      --bg-deep: #0F0F11;
+      --bg-card: #161618;
+      --bg-elevated: #1E1E21;
+      --accent: #FF9640;
+      --accent-dim: rgba(255, 150, 64, 0.15);
+      --text-primary: #F2F2F2;
+      --text-secondary: rgba(255, 255, 255, 0.55);
+      --text-tertiary: rgba(255, 255, 255, 0.35);
+      --green: #4CAF50;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-deepest);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      background: rgba(10, 10, 12, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 150, 64, 0.08);
+      padding: 0 24px;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-back {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-back:hover { color: var(--accent); }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      padding: 140px 24px 60px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255,150,64,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-content { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+
+    .hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .hero h1 .accent { color: var(--accent); }
+
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+
+    /* ── STEPS ────────────────────────────────────────── */
+    .steps-section {
+      padding: 40px 24px 100px;
+    }
+
+    .steps-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .step {
+      position: relative;
+      padding-left: 80px;
+      margin-bottom: 48px;
+    }
+
+    .step:last-child { margin-bottom: 0; }
+
+    /* Connector line */
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 27px;
+      top: 56px;
+      width: 2px;
+      height: calc(100% + 4px);
+      background: linear-gradient(to bottom, var(--accent), rgba(255,150,64,0.15));
+    }
+
+    .step-number {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 56px;
+      height: 56px;
+      background: var(--accent-dim);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .step h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-top: 12px;
+    }
+
+    .step p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    .step .note {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .step .note strong { color: var(--text-secondary); }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #1A1A1A;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .btn-primary:hover { background: #FFa855; transform: translateY(-2px); }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      color: var(--accent);
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      border: 2px solid var(--accent);
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .btn-outline:hover { background: var(--accent-dim); transform: translateY(-2px); }
+
+    .btn-google {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .btn-google:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    /* ── WHAT TO EXPECT ──────────────────────────────── */
+    .expect {
+      background: var(--bg-deep);
+      padding: 80px 24px;
+    }
+
+    .expect-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .expect h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.8rem;
+      font-weight: 900;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .expect-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .expect-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .expect-card .icon { font-size: 1.5rem; margin-bottom: 10px; display: block; }
+
+    .expect-card h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .expect-card p {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    /* ── HELP ─────────────────────────────────────────── */
+    .help {
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .help-inner {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .help h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .help p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+
+    .help-links {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .help-links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 10px 20px;
+      border: 1px solid rgba(255,150,64,0.25);
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .help-links a:hover { background: var(--accent-dim); }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      background: var(--bg-deep);
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-links { display: flex; gap: 24px; }
+
+    .footer-links a {
+      color: var(--text-tertiary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy { color: var(--text-tertiary); font-size: 0.85rem; }
+
+    @media (max-width: 768px) {
+      .expect-grid { grid-template-columns: 1fr; }
+      .step { padding-left: 68px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Score<span>Frame</span></a>
+    <a href="index.html" class="nav-back">← Back to Home</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>Become a <span class="accent">Beta Tester</span></h1>
+    <p>Help shape ScoreFrame before the public launch. Try new features first, report bugs, and tell us what to build next.</p>
+  </div>
+</section>
+
+<!-- STEPS -->
+<section class="steps-section">
+  <div class="steps-inner">
+
+    <div class="step">
+      <div class="step-number">1</div>
+      <h2>Join the Google Group</h2>
+      <p>Google Play requires beta testers to be in a Google Group. This takes 10 seconds — just click the button below and hit "Join group." You'll use the same Google account that you use on the Play Store.</p>
+      <div class="note">
+        <strong>Why a Google Group?</strong> Google Play's closed testing track requires testers to be part of a group. This is how Google knows you're authorized to download the beta. You won't receive any emails from the group — it's just for access.
+      </div>
+      <a href="https://groups.google.com/g/scoreframe-beta" target="_blank" class="btn-primary">
+        Join ScoreFrame Beta Group
+      </a>
+    </div>
+
+    <div class="step">
+      <div class="step-number">2</div>
+      <h2>Opt In on Google Play</h2>
+      <p>After joining the group, click the link below to opt in to the ScoreFrame testing program on Google Play. This tells the Play Store to show you the beta version of the app.</p>
+      <div class="note">
+        <strong>Note:</strong> It can take a few minutes after joining the Google Group for the opt-in link to work. If you see "not available," wait 5 minutes and try again.
+      </div>
+      <a href="https://play.google.com/apps/testing/com.scoreframe.android" target="_blank" class="btn-primary">
+        Opt In to Testing
+      </a>
+    </div>
+
+    <div class="step">
+      <div class="step-number">3</div>
+      <h2>Install ScoreFrame</h2>
+      <p>Once you've opted in, ScoreFrame will appear in the Google Play Store like any other app. Download it and you're in.</p>
+      <div class="btn-row">
+        <a href="https://play.google.com/store/apps/details?id=com.scoreframe.android" target="_blank" class="btn-google">
+          <svg width="20" height="22" viewBox="0 0 512 512" fill="currentColor"><path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/></svg>
+          Open in Google Play
+        </a>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">4</div>
+      <h2>Try It Out & Give Feedback</h2>
+      <p>Use ScoreFrame at your next game, bowling night, or even just around the house. Then tell us what you think — what works, what's confusing, what's missing, what broke.</p>
+      <div class="btn-row">
+        <a href="https://www.reddit.com/r/ScoreFrame/" target="_blank" class="btn-outline">
+          Post on r/ScoreFrame
+        </a>
+        <a href="mailto:support@scoreframe.app" class="btn-google">
+          Email Us
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- WHAT TO EXPECT -->
+<section class="expect">
+  <div class="expect-inner">
+    <h2>What to Expect as a Beta Tester</h2>
+    <div class="expect-grid">
+      <div class="expect-card">
+        <span class="icon">🆕</span>
+        <h3>Early Access</h3>
+        <p>Get new features before anyone else. Beta updates roll out frequently as development continues.</p>
+      </div>
+      <div class="expect-card">
+        <span class="icon">🐛</span>
+        <h3>Occasional Bugs</h3>
+        <p>It's beta software — things might break. Your reports help us fix them before the public launch.</p>
+      </div>
+      <div class="expect-card">
+        <span class="icon">💬</span>
+        <h3>Your Voice Matters</h3>
+        <p>Feature requests from beta testers directly shape what gets built. The developer reads every post.</p>
+      </div>
+      <div class="expect-card">
+        <span class="icon">🔒</span>
+        <h3>Same Privacy</h3>
+        <p>The beta has the same privacy protections as the release version. No data collection, no cloud uploads.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HELP -->
+<section class="help">
+  <div class="help-inner">
+    <h2>Need Help?</h2>
+    <p>If you run into any issues joining the beta or using the app, we're here to help.</p>
+    <div class="help-links">
+      <a href="https://www.reddit.com/r/ScoreFrame/">r/ScoreFrame</a>
+      <a href="mailto:support@scoreframe.app">support@scoreframe.app</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-copy">&copy; 2026 ScoreFrame. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="https://scoreframe.github.io/scoreframe/privacy_policy.html">Privacy Policy</a>
+      <a href="mailto:support@scoreframe.app">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

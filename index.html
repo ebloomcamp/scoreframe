@@ -3,310 +3,832 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy – ScoreFrame</title>
+  <title>ScoreFrame — Live Scoreboard on Your Sports Video</title>
+  <meta name="description" content="Record sports video with a professional scoreboard burned in live. 7 sports, remote scoring, automatic highlights. Free on Android." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg-deepest: #0A0A0C;
+      --bg-deep: #0F0F11;
+      --bg-card: #161618;
+      --bg-elevated: #1E1E21;
+      --accent: #FF9640;
+      --accent-dim: rgba(255, 150, 64, 0.15);
+      --accent-glow: rgba(255, 150, 64, 0.08);
+      --text-primary: #F2F2F2;
+      --text-secondary: rgba(255, 255, 255, 0.55);
+      --text-tertiary: rgba(255, 255, 255, 0.35);
+      --red: #FF3B3B;
+    }
+
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #f9f9fb;
-      color: #1a1a2e;
-      line-height: 1.7;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-deepest);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
     }
 
-    header {
-      background: #1a1a2e;
-      color: #fff;
-      padding: 48px 24px 40px;
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      background: rgba(10, 10, 12, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 150, 64, 0.08);
+      padding: 0 24px;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-cta {
+      background: var(--accent) !important;
+      color: #1A1A1A !important;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-weight: 700 !important;
+      font-size: 0.85rem !important;
+      transition: background 0.2s;
+    }
+
+    .nav-cta:hover { background: #FFa855 !important; }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
+      padding: 120px 24px 80px;
+      overflow: hidden;
     }
 
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(255,150,64,0.08) 0%, transparent 70%);
+      pointer-events: none;
     }
 
-    header p {
-      margin-top: 8px;
-      color: #a0a8c0;
-      font-size: 0.95rem;
+    /* Subtle grid */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,150,64,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,150,64,0.03) 1px, transparent 1px);
+      background-size: 80px 80px;
+      pointer-events: none;
     }
 
-    main {
-      max-width: 780px;
-      margin: 48px auto;
-      padding: 0 24px 64px;
-    }
+    .hero-content { position: relative; z-index: 1; max-width: 800px; }
 
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-      padding: 40px 48px;
-    }
-
-    section + section {
-      margin-top: 40px;
-      padding-top: 40px;
-      border-top: 1px solid #e8e8f0;
-    }
-
-    h2 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #1a1a2e;
-      margin-bottom: 12px;
-    }
-
-    p { margin-bottom: 12px; color: #3a3a5c; }
-    p:last-child { margin-bottom: 0; }
-
-    ul {
-      margin: 8px 0 12px 20px;
-      color: #3a3a5c;
-    }
-
-    ul li { margin-bottom: 6px; }
-
-    a { color: #4f6ef7; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    .badge {
-      display: inline-block;
-      background: #eef1ff;
-      color: #4f6ef7;
-      border-radius: 6px;
-      font-size: 0.78rem;
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(255,150,64,0.25);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
       font-weight: 600;
-      padding: 3px 10px;
-      margin-bottom: 10px;
-      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 32px;
       letter-spacing: 0.5px;
     }
 
-    .highlight-box {
-      background: #f0f4ff;
-      border-left: 4px solid #4f6ef7;
-      border-radius: 0 8px 8px 0;
-      padding: 16px 20px;
-      margin-bottom: 12px;
-      color: #2a2a4a;
-      font-size: 0.95rem;
+    .hero-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
     }
 
-    footer {
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -1px;
+    }
+
+    .hero h1 .accent { color: var(--accent); }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #1A1A1A;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .btn-primary:hover { background: #FFa855; transform: translateY(-2px); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .hero-sports {
+      margin-top: 48px;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-sports span {
+      font-size: 1.5rem;
+      opacity: 0.5;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .hero-sports span:hover { opacity: 1; transform: scale(1.2); }
+
+    /* ── SECTION UTILITY ────────────────────────────── */
+    section { padding: 100px 24px; }
+
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin-bottom: 48px;
+    }
+
+    /* ── FEATURES GRID ──────────────────────────────── */
+    .features { background: var(--bg-deep); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 16px;
+      padding: 36px 32px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(255,150,64,0.2);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    /* ── HOW IT WORKS ───────────────────────────────── */
+    .how-it-works { background: var(--bg-deepest); }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+      margin-top: 48px;
+    }
+
+    .step {
       text-align: center;
-      padding: 24px;
-      color: #888;
+      position: relative;
+    }
+
+    .step-number {
+      width: 56px;
+      height: 56px;
+      background: var(--accent-dim);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--accent);
+      margin: 0 auto 20px;
+    }
+
+    .step h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* ── SPORTS SECTION ─────────────────────────────── */
+    .sports { background: var(--bg-deep); }
+
+    .sports-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    .sport-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 28px 20px;
+      text-align: center;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .sport-card:hover {
+      border-color: rgba(255,150,64,0.25);
+      transform: translateY(-2px);
+    }
+
+    .sport-card .emoji { font-size: 2.4rem; margin-bottom: 12px; display: block; }
+    .sport-card h3 { font-size: 0.95rem; font-weight: 700; }
+
+    /* ── REMOTE SCORING ─────────────────────────────── */
+    .remote { background: var(--bg-deepest); }
+
+    .remote-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .remote-visual {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .remote-visual::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 30% 40%, rgba(255,150,64,0.06) 0%, transparent 60%);
+    }
+
+    .phone-pair {
+      position: relative;
+      z-index: 1;
+      font-size: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .phone-pair .wifi {
+      color: var(--accent);
+      font-size: 1.5rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .remote-text h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .remote-text p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    .check-list { list-style: none; }
+
+    .check-list li {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check-list li::before {
+      content: '✓';
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ── PRICING ─────────────────────────────────────── */
+    .pricing { background: var(--bg-deep); }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .price-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 40px 32px;
+    }
+
+    .price-card.pro {
+      border-color: var(--accent);
+      position: relative;
+    }
+
+    .price-card.pro::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #1A1A1A;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 100px;
+      letter-spacing: 1px;
+    }
+
+    .price-card h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .price-amount {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .price-amount .period { font-size: 0.9rem; font-weight: 400; color: var(--text-secondary); }
+
+    .price-card .price-desc {
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    .price-card ul {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+
+    .price-card ul li {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .price-card ul li::before {
+      content: '✓';
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ── CTA ──────────────────────────────────────────── */
+    .final-cta {
+      background: var(--bg-deepest);
+      text-align: center;
+      padding: 100px 24px;
+      position: relative;
+    }
+
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255,150,64,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .final-cta .section-title { margin-bottom: 20px; }
+
+    .final-cta p {
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      font-size: 1.05rem;
+    }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      background: var(--bg-deep);
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-links { display: flex; gap: 24px; }
+
+    .footer-links a {
+      color: var(--text-tertiary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      color: var(--text-tertiary);
       font-size: 0.85rem;
     }
 
-    @media (max-width: 600px) {
-      .card { padding: 28px 22px; }
-      header h1 { font-size: 1.5rem; }
+    /* ── RESPONSIVE ───────────────────────────────────── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .remote-layout { grid-template-columns: 1fr; }
+      .hero { min-height: auto; padding: 140px 24px 80px; }
+      section { padding: 64px 24px; }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>ScoreFrame – Privacy Policy</h1>
-  <p>Effective date: February 23, 2026 &nbsp;|&nbsp; Last updated: February 24, 2026</p>
-</header>
-
-<main>
-  <div class="card">
-
-    <!-- Overview -->
-    <section>
-      <span class="badge">Overview</span>
-      <h2>Our Commitment to Your Privacy</h2>
-      <div class="highlight-box">
-        ScoreFrame does not collect, store, or share any personal information. All recordings stay on your device.
-      </div>
-      <p>
-        This Privacy Policy describes how ScoreFrame ("we", "us", or "our") handles information when you use
-        our Android application. We built ScoreFrame to help you capture and manage your sports recordings —
-        your data stays yours.
-      </p>
-    </section>
-
-    <!-- Permissions -->
-    <section>
-      <span class="badge">Permissions</span>
-      <h2>Permissions We Request and Why</h2>
-      <p>ScoreFrame requests the following device permissions solely to provide its core functionality:</p>
-      <ul>
-        <li>
-          <strong>Camera</strong> — Used to record gameplay footage and display a live viewfinder.
-          Video is processed on-device and saved directly to your local storage.
-        </li>
-        <li>
-          <strong>Microphone / Audio Recording</strong> — Used to capture game audio alongside video.
-          Audio is encoded locally into your recordings and is never transmitted externally.
-        </li>
-        <li>
-          <strong>Storage (Read &amp; Write)</strong> — Used to save recorded video files to your device
-          and to access existing recordings for playback and highlight extraction.
-        </li>
-        <li>
-          <strong>Location (Access Fine Location)</strong> — Required by Android solely to enable
-          Wi-Fi Direct device discovery. This permission is a system requirement for peer-to-peer
-          Wi-Fi features and is <em>not</em> used to determine, record, or transmit your physical
-          location. ScoreFrame never accesses or stores GPS or location data.
-        </li>
-        <li>
-          <strong>Wi-Fi Direct (Nearby Devices)</strong> — Used to allow a second device running
-          ScoreFrame to act as a remote scoring controller over a direct local Wi-Fi connection.
-          No internet connection is required or used. All communication stays between the two devices.
-        </li>
-      </ul>
-      <p>
-        Permissions are requested only when you first use the relevant feature and are never used for any
-        purpose beyond what is described above.
-      </p>
-    </section>
-
-    <!-- Data We Do Not Collect -->
-    <section>
-      <span class="badge">Data Collection</span>
-      <h2>Information We Do Not Collect</h2>
-      <p>We do <strong>not</strong> directly collect, transmit, or store:</p>
-      <ul>
-        <li>Your name, email address, or any account information</li>
-        <li>Your location or GPS data</li>
-        <li>Device identifiers (IMEI, MAC address)</li>
-        <li>Usage analytics, crash reports, or diagnostic data</li>
-        <li>Any video, audio, or image content you record</li>
-        <li>Contacts, calendar, or any other personal data</li>
-      </ul>
-      <p>
-        Note: Our advertising partner Google AdMob may collect certain device information as described
-        in the Advertising section below. This data is collected by Google, not by ScoreFrame.
-      </p>
-    </section>
-
-    <!-- Local Storage -->
-    <section>
-      <span class="badge">Local Storage</span>
-      <h2>Video and Audio Files</h2>
-      <p>
-        All video recordings, audio tracks, and extracted highlight clips are stored exclusively on your
-        device in your local media storage. We have no access to these files.
-      </p>
-      <p>
-        You are in full control of your recordings. You may delete them at any time through the app or
-        your device's file manager. We do not back up, sync, or upload your content to any server.
-      </p>
-    </section>
-
-    <!-- Wi-Fi Direct -->
-    <section>
-      <span class="badge">Wi-Fi Direct</span>
-      <h2>Remote Scoring via Wi-Fi Direct</h2>
-      <p>
-        ScoreFrame offers an optional remote scoring feature that uses Android's Wi-Fi Direct technology
-        to connect two devices running the app. This allows one device to act as a dedicated scoring
-        controller while the other records.
-      </p>
-      <p>
-        When this feature is used:
-      </p>
-      <ul>
-        <li>Communication occurs exclusively between the two devices over a direct local connection — no internet, no servers, and no third parties are involved.</li>
-        <li>Only scoreboard state data (scores, sport type, game events) is transmitted between devices. No video, audio, or personal data is sent.</li>
-        <li>The connection is initiated manually by the user on both devices and can be terminated at any time.</li>
-        <li>No data from Wi-Fi Direct sessions is stored, logged, or transmitted beyond the two connected devices.</li>
-      </ul>
-      <p>
-        This feature is entirely optional and off by default. The app functions fully without it.
-      </p>
-    </section>
-
-    <!-- Advertising -->
-    <section>
-      <span class="badge">Advertising</span>
-      <h2>Google AdMob Ads</h2>
-      <p>
-        ScoreFrame displays advertisements served by <strong>Google AdMob</strong>, a third-party advertising
-        platform operated by Google LLC. To serve relevant ads, AdMob may collect and use certain
-        information from your device, which may include:
-      </p>
-      <ul>
-        <li>Advertising ID (Google Advertising ID / GAID)</li>
-        <li>Approximate location (country or region)</li>
-        <li>Device type, operating system version, and language</li>
-        <li>Ad interaction data (impressions, clicks)</li>
-        <li>IP address</li>
-      </ul>
-      <p>
-        This data is collected and processed by Google under their own privacy policy. We do not receive
-        or have access to this data. You can opt out of personalized advertising through your device's
-        settings under <em>Google &gt; Ads &gt; Opt out of Ads Personalization</em>.
-      </p>
-      <p>
-        For more information, please review
-        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
-          Google's Privacy Policy
-        </a> and
-        <a href="https://support.google.com/admob/answer/6128543" target="_blank" rel="noopener noreferrer">
-          How Google uses data when you use our partners' sites or apps
-        </a>.
-      </p>
-    </section>
-
-    <!-- Third-Party Services -->
-    <section>
-      <span class="badge">Third Parties</span>
-      <h2>Third-Party Services</h2>
-      <p>
-        Beyond Google AdMob, ScoreFrame does not integrate with any third-party SDKs, analytics services,
-        crash reporting tools, or social platforms. No data is shared with or sold to any third party by us.
-      </p>
-    </section>
-
-    <!-- Children -->
-    <section>
-      <span class="badge">Children</span>
-      <h2>Children's Privacy</h2>
-      <p>
-        ScoreFrame is not directed at children under the age of 13. We do not knowingly collect personal
-        information from children. If you believe a child has provided personal information through our app,
-        please contact us so we can address it promptly.
-      </p>
-    </section>
-
-    <!-- Changes -->
-    <section>
-      <span class="badge">Updates</span>
-      <h2>Changes to This Policy</h2>
-      <p>
-        We may update this Privacy Policy from time to time. When we do, we will revise the "Last updated"
-        date at the top of this page. We encourage you to review this policy periodically. Continued use of
-        the app after changes are posted constitutes your acceptance of the updated policy.
-      </p>
-    </section>
-
-    <!-- Contact -->
-    <section>
-      <span class="badge">Contact</span>
-      <h2>Contact Us</h2>
-      <p>
-        If you have any questions or concerns about this Privacy Policy, please contact us at:
-      </p>
-      <p>
-        <strong>ScoreFrame Support</strong><br />
-        Email: <a href="mailto:support@bloomcamp.com">support@bloomcamp.com</a>
-      </p>
-    </section>
-
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">Score<span>Frame</span></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#sports">Sports</a>
+      <a href="#pricing">Pricing</a>
+      <a href="https://www.reddit.com/r/ScoreFrame/" target="_blank">Community</a>
+      <a href="beta.html" class="nav-cta">Join the Beta</a>
+    </div>
   </div>
-</main>
+</nav>
 
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      Now in Beta — Join the Testing Program
+    </div>
+    <h1>Live Scoreboard.<br /><span class="accent">On Your Video.</span></h1>
+    <p class="hero-sub">
+      Record sports video with a broadcast-quality scoreboard burned directly into the footage.
+      No editing. No cloud. No accounts. Just hit record and score.
+    </p>
+    <div class="hero-buttons">
+      <a href="beta.html" class="btn-primary" id="download">
+        Become a Beta Tester
+      </a>
+      <a href="https://www.reddit.com/r/ScoreFrame/" class="btn-secondary">
+        Join r/ScoreFrame
+      </a>
+    </div>
+    <div class="hero-sports">
+      <span title="Basketball">🏀</span>
+      <span title="Football">🏈</span>
+      <span title="Bowling">🎳</span>
+      <span title="Soccer">⚽</span>
+      <span title="Volleyball">🏐</span>
+      <span title="Baseball">⚾</span>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-inner">
+    <span class="section-label">Features</span>
+    <h2 class="section-title">Everything You Need at the Game</h2>
+    <p class="section-desc">Built for parents, coaches, players, and content creators who want professional-looking game footage without the production crew.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🎥</span>
+        <h3>Live Scoreboard Overlay</h3>
+        <p>The scoreboard renders in real time using OpenGL ES compositing. It's part of the video frame from the moment you record — not added in post.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📱</span>
+        <h3>Remote Scoring</h3>
+        <p>A second phone controls the score wirelessly over Wi-Fi Direct. No internet, no router needed. One person films, the other keeps score from the stands.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⭐</span>
+        <h3>Automatic Highlights</h3>
+        <p>Tap the star button during recording to mark a moment. ScoreFrame extracts a clip around it automatically — no scrubbing through hours of footage.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🖥️</span>
+        <h3>Full-Screen Mode</h3>
+        <p>Expand the video to fill the entire screen. Scoring controls slide out from the right when you need them. Perfect for tripod setups.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎮</span>
+        <h3>Bluetooth Button Control</h3>
+        <p>Pair any Bluetooth clicker to start, pause, and capture highlights without touching the phone. Mount it and control from the sideline.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔒</span>
+        <h3>Privacy First</h3>
+        <p>No accounts, no cloud uploads, no data collection. All recordings and game data stay on your phone. Your videos are yours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-it-works">
+  <div class="section-inner" style="text-align: center;">
+    <span class="section-label">How It Works</span>
+    <h2 class="section-title">Three Steps. That's It.</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Pick Your Sport</h3>
+        <p>Choose from 7 sports. Each has a purpose-built scoreboard with the right stats for that game.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Record & Score</h3>
+        <p>Hit record and tap to update the score. The scoreboard updates live on the video in real time.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Share</h3>
+        <p>Your video is done — scoreboard burned in, highlights clipped. Share straight from your gallery.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPORTS -->
+<section class="sports" id="sports">
+  <div class="section-inner">
+    <span class="section-label">Sports Library</span>
+    <h2 class="section-title">Built for How Each Sport Is Played</h2>
+    <p class="section-desc">Not generic timers — real scoreboards with sport-specific stats, periods, and scoring rules.</p>
+
+    <div class="sports-grid">
+      <div class="sport-card">
+        <span class="emoji">🏀</span>
+        <h3>Basketball</h3>
+      </div>
+      <div class="sport-card">
+        <span class="emoji">🏈</span>
+        <h3>Football</h3>
+      </div>
+      <div class="sport-card">
+        <span class="emoji">🎳</span>
+        <h3>Bowling</h3>
+      </div>
+      <div class="sport-card">
+        <span class="emoji">⚽</span>
+        <h3>Soccer</h3>
+      </div>
+      <div class="sport-card">
+        <span class="emoji">🏐</span>
+        <h3>Volleyball</h3>
+      </div>
+      <div class="sport-card">
+        <span class="emoji">⚾</span>
+        <h3>Baseball</h3>
+      </div>
+      <div class="sport-card">
+        <span class="emoji">🏅</span>
+        <h3>Generic</h3>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REMOTE SCORING -->
+<section class="remote">
+  <div class="section-inner">
+    <div class="remote-layout">
+      <div class="remote-visual">
+        <div class="phone-pair">
+          📷 <span class="wifi">⟷</span> 🎮
+        </div>
+        <p style="color: var(--text-tertiary); margin-top: 24px; font-size: 0.9rem; position: relative; z-index: 1;">Camera Phone &nbsp;&nbsp;←→&nbsp;&nbsp; Controller Phone</p>
+      </div>
+      <div class="remote-text">
+        <span class="section-label">Remote Scoring</span>
+        <h3>Two Phones. No Internet.</h3>
+        <p>Hand a second phone to someone in the stands. They control the score wirelessly while you focus on filming. The phones connect directly over Wi-Fi Direct — works anywhere, even with no cell service.</p>
+        <ul class="check-list">
+          <li>No internet or router needed</li>
+          <li>No accounts on either phone</li>
+          <li>Controller phone is always free</li>
+          <li>Works in gyms with no signal</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-inner" style="text-align: center;">
+    <span class="section-label">Pricing</span>
+    <h2 class="section-title">Free to Record. Pro to Go Further.</h2>
+    <p class="section-desc" style="margin: 0 auto 48px;">All the essentials are free — no paywalls on your own game footage.</p>
+
+    <div class="pricing-grid">
+      <div class="price-card">
+        <h3>Free</h3>
+        <div class="price-amount">$0</div>
+        <p class="price-desc">Everything you need to get started</p>
+        <ul>
+          <li>All 7 sports with full scoring</li>
+          <li>Live scoreboard on video</li>
+          <li>Remote scoring (both phones)</li>
+          <li>Scoring-only mode</li>
+          <li>1080p recording</li>
+          <li>Video stabilization</li>
+        </ul>
+      </div>
+      <div class="price-card pro">
+        <h3>ScoreFrame Pro</h3>
+        <div class="price-amount">$7.99<span class="period"> /mo</span></div>
+        <p class="price-desc">Or $59.99/year — 7-day free trial</p>
+        <ul>
+          <li>Everything in Free, plus:</li>
+          <li>4K 60fps recording</li>
+          <li>No watermark</li>
+          <li>Ad-free experience</li>
+          <li>Full-screen recording mode</li>
+          <li>Camera controls (WB, exposure, HDR)</li>
+          <li>Bluetooth button control</li>
+          <li>Tap-to-focus</li>
+          <li>Unlimited highlights</li>
+          <li>Stats export (PDF)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="section-inner" style="position: relative; z-index: 1;">
+    <h2 class="section-title">Ready to Record?</h2>
+    <p>Join the beta testing program and help shape ScoreFrame before the public launch.</p>
+    <a href="beta.html" class="btn-primary">
+      Become a Beta Tester
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
-  &copy; 2026 ScoreFrame. All rights reserved.
-</footer>
-
-</body>
-</html>
+  <div class="footer-inner">
+    <span class="footer-copy">&copy; 2026 ScoreFrame. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="https://scoreframe.github.io/scoreframe/privacy_policy.html">Privacy Policy</a>
+      <a href="/cdn-cgi/l/email-protection#4b383e3b3b24393f0b382824392e2d392a262e652a3b3b">Contact</a>
+      <a href="https://www.reddit.com/r/ScoreFrame/">r/ScoreFrame</a>
+  
