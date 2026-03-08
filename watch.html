@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watch Live — ScoreFrame</title>
+  <meta name="description" content="Watch a live ScoreFrame game stream" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0A0A0C;
+      --bg-card: #161618;
+      --accent: #FF9640;
+      --accent-dim: rgba(255, 150, 64, 0.15);
+      --text: #F2F2F2;
+      --text2: rgba(255, 255, 255, 0.55);
+      --text3: rgba(255, 255, 255, 0.35);
+    }
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Nav */
+    nav {
+      background: rgba(10, 10, 12, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 150, 64, 0.08);
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-back {
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .nav-back:hover { color: var(--accent); }
+
+    /* Main */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* Player container */
+    .player-wrap {
+      width: 100%;
+      max-width: 900px;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 16/9;
+    }
+    .player-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* Status bar */
+    .status-bar {
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+    }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #CC2020;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .live-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .stream-info {
+      color: var(--text2);
+      font-size: 0.9rem;
+    }
+
+    /* Score ticker */
+    .score-ticker {
+      max-width: 900px;
+      width: 100%;
+      background: var(--bg-card);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-top: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    /* No stream / loading states */
+    .message-card {
+      max-width: 500px;
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .message-card h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+    }
+    .message-card p {
+      color: var(--text2);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+    .message-card .emoji { font-size: 3rem; margin-bottom: 16px; display: block; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #1A1A1A;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #FFa855; }
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--accent);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      border: 2px solid var(--accent);
+    }
+    .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--text3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding: 24px;
+      text-align: center;
+    }
+    .footer-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .footer-inner a { color: var(--text3); text-decoration: none; font-size: 0.8rem; }
+    .footer-inner a:hover { color: var(--accent); }
+    .footer-copy { color: var(--text3); font-size: 0.8rem; }
+
+    @media (max-width: 600px) {
+      .player-wrap { border-radius: 0; }
+      .status-bar, .score-ticker { padding-left: 12px; padding-right: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Score<span>Frame</span></a>
+    <a href="index.html" class="nav-back">← Home</a>
+  </div>
+</nav>
+
+<main>
+  <!-- State: Loading -->
+  <div id="state-loading" class="message-card" style="display:none;">
+    <div class="loading-spinner"></div>
+    <h1>Connecting to Stream...</h1>
+    <p>Loading the live video feed.</p>
+  </div>
+
+  <!-- State: No URL -->
+  <div id="state-no-url" class="message-card" style="display:none;">
+    <span class="emoji">📺</span>
+    <h1>Watch a Live Game</h1>
+    <p>To watch a live ScoreFrame stream, you need a share link from the person recording the game. Open the link on your phone to watch in the ScoreFrame app, or paste the playback URL below.</p>
+    <div style="margin-bottom: 20px;">
+      <input type="text" id="manual-url" placeholder="Paste HLS playback URL here..." style="width:100%;max-width:400px;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:var(--bg-card);color:var(--text);font-size:0.9rem;" />
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="playManualUrl()">Play</button>
+      <a href="beta.html" class="btn-outline">Get ScoreFrame</a>
+    </div>
+  </div>
+
+  <!-- State: Playing -->
+  <div id="state-playing" style="display:none; width:100%; max-width:900px;">
+    <div class="status-bar">
+      <div class="live-badge"><span class="dot"></span> LIVE</div>
+      <div class="stream-info" id="stream-info"></div>
+    </div>
+    <div class="player-wrap">
+      <video id="video-player" controls autoplay playsinline muted></video>
+    </div>
+    <div class="score-ticker" id="score-ticker"></div>
+    <div style="text-align:center; margin-top:16px;">
+      <p style="color:var(--text3); font-size:0.85rem;">For the best experience with live score updates, <a href="beta.html" style="color:var(--accent);">download ScoreFrame</a></p>
+    </div>
+  </div>
+
+  <!-- State: Error -->
+  <div id="state-error" class="message-card" style="display:none;">
+    <span class="emoji">😕</span>
+    <h1>Stream Unavailable</h1>
+    <p id="error-message">The stream may have ended or the URL is invalid. Check with the person who shared the link.</p>
+    <div class="btn-row">
+      <a href="index.html" class="btn-primary">Go to ScoreFrame</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span class="footer-copy">&copy; 2026 Glavin Labs LLC. All rights reserved. ScoreFrame is a Glavin Labs product.</span>
+    <div>
+      <a href="index.html">Home</a> &nbsp;
+      <a href="privacy.html">Privacy</a> &nbsp;
+      <a href="mailto:support@scoreframe.app">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const playbackUrl = params.get('playback');
+  const sport = params.get('sport') || '';
+
+  function showState(id) {
+    ['state-loading', 'state-no-url', 'state-playing', 'state-error'].forEach(s => {
+      document.getElementById(s).style.display = 'none';
+    });
+    document.getElementById(id).style.display = id === 'state-playing' ? 'block' : '';
+    if (id !== 'state-playing') {
+      document.getElementById(id).style.display = 'flex';
+      document.getElementById(id).style.flexDirection = 'column';
+      document.getElementById(id).style.alignItems = 'center';
+    }
+  }
+
+  function startPlayback(url) {
+    showState('state-loading');
+
+    const video = document.getElementById('video-player');
+    const info = document.getElementById('stream-info');
+
+    if (sport) {
+      info.textContent = decodeURIComponent(sport);
+    }
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        lowLatencyMode: true,
+        liveSyncDurationCount: 3,
+        liveMaxLatencyDurationCount: 6,
+      });
+
+      hls.loadSource(url);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        showState('state-playing');
+        video.play().catch(() => {});
+      });
+
+      hls.on(Hls.Events.ERROR, function(event, data) {
+        if (data.fatal) {
+          console.error('HLS fatal error:', data);
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            // Try to recover
+            setTimeout(() => hls.loadSource(url), 3000);
+          } else {
+            showState('state-error');
+          }
+        }
+      });
+
+      // Listen for ID3 timed metadata (score updates)
+      hls.on(Hls.Events.FRAG_PARSING_METADATA, function(event, data) {
+        if (data.samples) {
+          data.samples.forEach(sample => {
+            try {
+              // ID3 text frame — decode and display
+              const text = new TextDecoder().decode(sample.data);
+              // Try to parse as JSON score update
+              const json = JSON.parse(text.replace(/[^\x20-\x7E]/g, ''));
+              if (json.sport) {
+                updateScoreTicker(json);
+              }
+            } catch (e) {
+              // Not JSON or not parseable — ignore
+            }
+          });
+        }
+      });
+
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari native HLS
+      video.src = url;
+      video.addEventListener('loadedmetadata', function() {
+        showState('state-playing');
+        video.play().catch(() => {});
+      });
+      video.addEventListener('error', function() {
+        showState('state-error');
+      });
+    } else {
+      document.getElementById('error-message').textContent = 'Your browser does not support HLS video playback. Try Chrome, Safari, or Edge.';
+      showState('state-error');
+    }
+  }
+
+  function updateScoreTicker(json) {
+    const ticker = document.getElementById('score-ticker');
+    ticker.style.display = 'block';
+
+    // Build a simple score display based on sport
+    let text = '';
+    const s = json.sport || '';
+
+    if (json.homeScore !== undefined && json.awayScore !== undefined) {
+      const home = json.homeName || 'Home';
+      const away = json.awayName || 'Away';
+      text = home + ' ' + json.homeScore + '  —  ' + json.awayScore + ' ' + away;
+      if (json.period) text += '  •  ' + json.period;
+    } else if (json.score !== undefined) {
+      text = 'Score: ' + json.score;
+      if (json.frame) text += '  •  Frame ' + json.frame;
+    } else {
+      text = JSON.stringify(json).substring(0, 100);
+    }
+
+    ticker.textContent = text;
+  }
+
+  function playManualUrl() {
+    const url = document.getElementById('manual-url').value.trim();
+    if (url) {
+      startPlayback(url);
+    }
+  }
+
+  // Check for Enter key on manual URL input
+  document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('manual-url');
+    if (input) {
+      input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') playManualUrl();
+      });
+    }
+  });
+
+  // Init
+  if (playbackUrl) {
+    startPlayback(decodeURIComponent(playbackUrl));
+  } else {
+    showState('state-no-url');
+  }
+</script>
+
+</body>
+</html>
