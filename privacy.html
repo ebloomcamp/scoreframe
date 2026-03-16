@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
@@ -48,126 +47,168 @@
 <nav><div class="nav-inner"><a href="index.html" class="nav-logo">Score<span>Frame</span></a><a href="index.html" class="nav-back">Back to Home</a></div></nav>
 <main>
 <h1>Privacy Policy</h1>
-<p class="date">Effective March 5, 2026 | Last updated March 5, 2026</p>
+<p class="date">Effective March 16, 2026 | Last updated March 16, 2026</p>
 <div class="card">
 
 <section>
 <span class="badge">Overview</span>
 <h2>Our Commitment to Your Privacy</h2>
-<div class="highlight">ScoreFrame does not collect, store, or share any personal information. All recordings stay on your device. There are no accounts, no cloud uploads, and no tracking.</div>
-<p>This Privacy Policy describes how ScoreFrame handles information when you use our Android application. We built ScoreFrame to help you record sports video with professional scoreboard overlays. Your data stays yours.</p>
+<div class="highlight">ScoreFrame is designed with privacy first. Video recordings always stay on your device. Cloud features (accounts, sync, streaming) are optional and clearly described below. We never sell your data.</div>
+<p>This Privacy Policy describes how ScoreFrame ("we", "us", or "our"), operated by Glavin Labs LLC, handles information when you use our Android application. ScoreFrame helps you record sports video with professional scoreboard overlays, track game stats, and optionally stream live.</p>
+</section>
+
+<section>
+<span class="badge">Accounts</span>
+<h2>ScoreFrame Accounts (Optional)</h2>
+<p>You can use ScoreFrame without creating an account. All core features work without signing in. If you choose to create an account, we collect:</p>
+<ul>
+<li><strong>Email address</strong> &mdash; Used to identify your account and for password reset (email sign-in) or provided by Google (Google Sign-In).</li>
+<li><strong>Display name</strong> &mdash; Your name as shown in your Google account or entered during sign-up.</li>
+<li><strong>Profile photo URL</strong> &mdash; From your Google account (Google Sign-In only). We do not store the photo itself.</li>
+</ul>
+<p>Account data is stored in <strong>Firebase Authentication</strong>, a service operated by Google. Account creation is always your choice. You can delete your account at any time from within the app, which permanently removes all associated cloud data.</p>
+</section>
+
+<section>
+<span class="badge">Cloud Data</span>
+<h2>Data Synced to the Cloud</h2>
+<p>If you create an account, the following data may be synced to <strong>Google Cloud Firestore</strong> to enable cross-device access and backup:</p>
+<ul>
+<li><strong>Team profiles</strong> &mdash; Team names, colors, and player rosters you create in "My Teams."</li>
+<li><strong>Game history</strong> &mdash; Final scores, dates, sport type, and game statistics (Pro subscribers only).</li>
+<li><strong>Baseball/softball scorebook data</strong> &mdash; Play-by-play records from the Full Scorebook feature (Pro subscribers only).</li>
+<li><strong>Career statistics</strong> &mdash; Aggregated per-player stats such as bowling averages and batting averages (Pro subscribers only).</li>
+<li><strong>Sport configurations</strong> &mdash; Your preferred match formats (e.g., best-of-3 vs best-of-5).</li>
+</ul>
+<p>This data is stored in Google Cloud data centers (United States). Only you can access your data &mdash; it is private to your account and protected by Firestore security rules. We do not access, analyze, or share your game data.</p>
+<p><strong>Video recordings are never uploaded.</strong> All video files remain exclusively on your device.</p>
+</section>
+
+<section>
+<span class="badge">Email</span>
+<h2>Email Marketing</h2>
+<p>During account creation, you may opt in to receive ScoreFrame email updates (new features, tips, and announcements). This is optional and unchecking the box means your email will not be used for marketing.</p>
+<ul>
+<li>We send approximately 1-2 emails per month.</li>
+<li>You can unsubscribe at any time via the toggle in your account settings or the unsubscribe link in any email.</li>
+<li>Your email marketing preference is stored in Firestore alongside your account data.</li>
+<li>We do not share your email with any third party for marketing purposes.</li>
+</ul>
+</section>
+
+<section>
+<span class="badge">Streaming</span>
+<h2>Live Streaming</h2>
+<p>ScoreFrame Pro subscribers can stream their game video live. When you use streaming features:</p>
+<ul>
+<li><strong>YouTube streaming</strong> &mdash; When you connect your YouTube account via Google OAuth, ScoreFrame creates live broadcasts on your YouTube channel. Your video is sent directly from your device to YouTube's servers via RTMP. ScoreFrame does not store or process the stream. YouTube's Privacy Policy governs the video on their platform.</li>
+<li><strong>Amazon IVS streaming</strong> &mdash; For private streams, video is sent to Amazon Interactive Video Service. Streams are ephemeral and not recorded on AWS unless you explicitly enable it. AWS credentials you enter are stored locally on your device and never transmitted to our servers.</li>
+<li><strong>Live chat</strong> &mdash; YouTube live chat messages are fetched from and sent to YouTube's API. We do not store chat messages.</li>
+</ul>
+<p>Streaming requires an internet connection. When streaming, your video and audio are transmitted to the streaming service you choose. This is the only time your recorded content leaves your device.</p>
 </section>
 
 <section>
 <span class="badge">Permissions</span>
 <h2>Permissions We Request and Why</h2>
-<p>ScoreFrame requests the following device permissions solely to provide its core functionality:</p>
 <ul>
-<li><strong>Camera</strong> &mdash; Records video footage and displays a live viewfinder with scoreboard overlay. Video is processed on-device using OpenGL ES and saved directly to local storage.</li>
-<li><strong>Microphone</strong> &mdash; Captures game audio alongside video. A mute toggle is available. Audio is never transmitted externally.</li>
-<li><strong>Storage</strong> &mdash; Saves recorded video files, highlight clips, and exported stats PDFs to your device.</li>
-<li><strong>Wi-Fi / Network State</strong> &mdash; Used for remote scoring over Wi-Fi Direct. This is peer-to-peer between your devices, with no external server involved.</li>
-<li><strong>Nearby Devices / Wi-Fi Direct</strong> &mdash; Discovers and connects to a second phone for remote scoring. The connection is local and direct.</li>
-<li><strong>Modify Audio Settings</strong> &mdash; Used for the microphone mute feature during recording.</li>
-<li><strong>Internet Access</strong> &mdash; Used only for advertisements (Google AdMob) on the free tier and for in-app purchases (Google Play Billing). ScoreFrame does not upload any of your content or personal data.</li>
-<li><strong>Vibration</strong> &mdash; Haptic feedback on scoring actions and external button events.</li>
+<li><strong>Camera</strong> &mdash; Records video with scoreboard overlay via OpenGL ES.</li>
+<li><strong>Microphone</strong> &mdash; Captures game audio. Mute toggle available. Not transmitted unless streaming.</li>
+<li><strong>Storage</strong> &mdash; Saves video files, highlight clips, snapshots, and stats PDFs.</li>
+<li><strong>Wi-Fi / Nearby Devices</strong> &mdash; Remote scoring over Wi-Fi Direct (peer-to-peer, no server).</li>
+<li><strong>Bluetooth</strong> &mdash; External button for hands-free recording control.</li>
+<li><strong>Internet</strong> &mdash; Ads (free tier), purchases, cloud sync (if signed in), streaming (if enabled).</li>
+<li><strong>Vibration</strong> &mdash; Haptic feedback on scoring actions.</li>
 </ul>
-<p>Permissions are requested only when you first use the relevant feature and are never used beyond what is described above.</p>
+<p>Permissions are requested only when you first use the relevant feature.</p>
 </section>
 
 <section>
-<span class="badge">Data Collection</span>
-<h2>Information We Do Not Collect</h2>
-<p>We do <strong>not</strong> collect, transmit, or store:</p>
+<span class="badge">Local Data</span>
+<h2>Data Stored on Your Device</h2>
+<p>The following data is stored locally and never leaves your device (unless you enable cloud sync):</p>
 <ul>
-<li>Your name, email address, or any account information (ScoreFrame has no accounts)</li>
-<li>Your location or GPS data</li>
-<li>Device identifiers (IMEI, MAC address)</li>
-<li>Usage analytics, crash reports, or diagnostic data</li>
-<li>Any video, audio, or image content you record</li>
-<li>Contacts, calendar, or any other personal data</li>
-<li>Game scores, team names, player rosters, or any data you enter into the app</li>
+<li>Video recordings, highlight clips, and snapshots</li>
+<li>Game scores, team names, colors, and rosters</li>
+<li>App settings (resolution, orientation, camera preferences)</li>
+<li>Game history and career statistics</li>
 </ul>
-<p>All game data is stored locally on your device and is never transmitted anywhere.</p>
-</section>
-
-<section>
-<span class="badge">Local Storage</span>
-<h2>Video, Audio, and Game Data</h2>
-<p>All video recordings, highlight clips, and exported stats PDFs are stored exclusively on your device in Movies/ScoreFrame. We have no access to these files.</p>
-<p>Game scores, team names, colors, rosters, and settings are stored locally as JSON files and SharedPreferences. None of this data leaves your device.</p>
-<p>Uninstalling the app removes all app settings and game data. Video recordings in your media storage are managed by you.</p>
-</section>
-
-<section>
-<span class="badge">Connectivity</span>
-<h2>Wi-Fi Direct (Remote Scoring)</h2>
-<p>ScoreFrame's remote scoring connects two phones directly over Wi-Fi Direct. No internet, router, or external server is involved. Data transmitted includes only scoring commands, sport state updates, and optionally a camera preview stream. No personal information is exchanged.</p>
-</section>
-
-<section>
-<span class="badge">Connectivity</span>
-<h2>Bluetooth (External Button)</h2>
-<p>ScoreFrame can use a paired Bluetooth device to control recording hands-free. The app listens for key events from devices already paired through your phone's system settings. ScoreFrame does not scan for or manage Bluetooth connections. The registered button's device name and key code are stored locally.</p>
+<p>Uninstalling removes all app settings and game data. Video files in your media storage are managed by your device.</p>
 </section>
 
 <section>
 <span class="badge">Advertising</span>
 <h2>Google AdMob Ads</h2>
-<p>The free tier displays advertisements via Google AdMob. AdMob may collect advertising ID, approximate location, device info, ad interaction data, and IP address. This data is collected by Google under their privacy policy. Pro subscribers do not see ads.</p>
-<p>Opt out of personalized ads via your device settings under Google &gt; Ads. See <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</p>
+<p>The free tier displays advertisements via Google AdMob. AdMob may collect advertising ID, approximate location, device info, ad interaction data, and IP address under Google's privacy policy. Pro subscribers see no ads.</p>
+<p>Opt out of personalized ads via Settings &gt; Google &gt; Ads. See <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</p>
 </section>
 
 <section>
 <span class="badge">Purchases</span>
 <h2>Google Play Billing</h2>
-<p>ScoreFrame offers an optional Pro subscription through Google Play Billing. All transactions are processed by Google Play. We do not collect or store any payment information.</p>
+<p>ScoreFrame Pro is available through Google Play Billing. All transactions are processed by Google. We do not collect or store payment information.</p>
 </section>
 
 <section>
 <span class="badge">Third Parties</span>
 <h2>Third-Party Services</h2>
-<p>ScoreFrame integrates with Google AdMob (advertising, free tier) and Google Play Billing (purchases). Beyond these, we do not use any analytics, crash reporting, social platforms, or data brokers. No data is shared with or sold to any third party.</p>
-</section>
-
-<section>
-<span class="badge">Feedback</span>
-<h2>In-App Feedback</h2>
-<p>The feedback feature opens your device's email app with a pre-filled message. We do not send feedback automatically. Device info is only included if you check the option and send the email yourself.</p>
+<ul>
+<li><strong>Google AdMob</strong> &mdash; Advertising (free tier only)</li>
+<li><strong>Google Play Billing</strong> &mdash; Subscription purchases</li>
+<li><strong>Firebase Authentication</strong> &mdash; Account management (optional)</li>
+<li><strong>Google Cloud Firestore</strong> &mdash; Cloud data sync (optional)</li>
+<li><strong>Google Sign-In</strong> &mdash; OAuth authentication (optional)</li>
+<li><strong>YouTube Data API</strong> &mdash; Live streaming to YouTube (optional)</li>
+<li><strong>Amazon IVS</strong> &mdash; Private live streaming (optional)</li>
+</ul>
+<p>Each service operates under its own privacy policy. We do not sell or share your personal data with any third party for their own marketing purposes.</p>
 </section>
 
 <section>
 <span class="badge">Children</span>
 <h2>Children's Privacy</h2>
-<p>ScoreFrame is not directed at children under 13. Since ScoreFrame collects no personal information from any user, there is no mechanism for a child's data to be gathered.</p>
+<p>ScoreFrame is not directed at children under 13. We do not knowingly collect personal information from children. If you create an account, you represent that you are at least 13 years old.</p>
 </section>
 
 <section>
 <span class="badge">Retention</span>
-<h2>Data Retention</h2>
-<p>ScoreFrame does not retain any user data on external servers. All data is local. Uninstalling removes all app data.</p>
+<h2>Data Retention &amp; Deletion</h2>
+<p><strong>Local data:</strong> Stored until you uninstall or delete it manually.</p>
+<p><strong>Cloud data:</strong> Stored until you delete your account. Account deletion permanently removes all cloud data (profile, teams, games, stats, marketing preferences) from Firestore and Firebase Authentication.</p>
+</section>
+
+<section>
+<span class="badge">Your Rights</span>
+<h2>Your Data Rights</h2>
+<ul>
+<li><strong>Access</strong> your data &mdash; View synced data in My Teams and Game History.</li>
+<li><strong>Delete</strong> your data &mdash; Delete your account to remove all cloud data permanently.</li>
+<li><strong>Opt out</strong> of marketing emails &mdash; Toggle in account settings or unsubscribe link.</li>
+<li><strong>Opt out</strong> of personalized ads &mdash; Device Google ad settings.</li>
+<li><strong>Export</strong> your data &mdash; Export stats as PDF, share game summaries.</li>
+</ul>
 </section>
 
 <section>
 <span class="badge">Refunds</span>
 <h2>Refund Policy</h2>
-<p>ScoreFrame Pro subscriptions include a free trial period so you can evaluate the app before being charged. If you experience an issue after subscribing, please contact us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="75060005051a07013506161a071013071418105b140505">[email&#160;protected]</a> — we actively maintain the app and work to resolve bugs quickly.</p>
-<p>If we are unable to resolve your issue in a timely manner, we will work with you on a prorated refund for the remaining time on your subscription. Refunds are processed through Google Play. You can also cancel your subscription at any time through the Google Play Store to prevent future charges.</p>
+<p>ScoreFrame Pro includes a free trial. If you experience an issue, contact us at <a href="mailto:support@scoreframe.app">support@scoreframe.app</a>. If unresolved, we will work with you on a prorated refund. Cancel anytime through Google Play.</p>
 </section>
 
 <section>
 <span class="badge">Updates</span>
 <h2>Changes to This Policy</h2>
-<p>We may update this policy from time to time and will revise the date at the top. Continued use after changes constitutes acceptance.</p>
+<p>We may update this policy and will revise the date above. Material changes will be communicated through the app or email (if opted in). Continued use constitutes acceptance.</p>
 </section>
 
 <section>
 <span class="badge">Contact</span>
 <h2>Contact Us</h2>
-<p>If you have questions about this Privacy Policy:</p>
-<p><strong>ScoreFrame Support</strong><br />Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3a494f4a4a55484e7a495955485f5c485b575f145b4a4a">[email&#160;protected]</a></p>
+<p><strong>Glavin Labs LLC</strong><br />Email: <a href="mailto:support@scoreframe.app">support@scoreframe.app</a><br />Website: <a href="https://scoreframe.app">scoreframe.app</a></p>
 </section>
 
 </div>
 </main>
-<footer><div class="footer-inner"><span class="footer-copy">&copy; 2026 Gl
+<footer><div class="footer-inner"><span class="footer-copy">&copy; 2026 Glavin Labs LLC. All rights reserved. ScoreFrame is a Glavin Labs product.</span><div><a href="index.html">Home</a> &nbsp; <a href="beta.html">Beta</a> &nbsp; <a href="mailto:support@scoreframe.app">Contact</a></div></div></footer>
+</body>
+</html>
