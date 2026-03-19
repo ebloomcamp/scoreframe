@@ -357,7 +357,7 @@
 <div class="header">
   <h1>Score<span>Frame</span> Architecture</h1>
   <div class="subtitle">System Ecosystem &amp; Component Map</div>
-  <div class="version">v1.0.15 · CLAUDE.md v73 · March 2026</div>
+  <div class="version">v1.0.15 · CLAUDE.md v74 · March 2026</div>
 </div>
 
 <!-- Stats -->
@@ -872,6 +872,13 @@
       <span class="tag">Local + Cloud</span>
     </div>
     <div class="node cat-cloud">
+      <span class="icon">🎨</span>
+      <div class="name">Theme UI</div>
+      <div class="file">ScoreFrameUI.kt</div>
+      <div class="desc">Theme-aware color utility. 20+ color methods resolving from Material 3 theme attrs. Widget factories. Central source for all UI colors.</div>
+      <span class="tag">Material 3</span>
+    </div>
+    <div class="node cat-cloud">
       <span class="icon">🔄</span>
       <div class="name">App Update</div>
       <div class="file">AppUpdateChecker.kt</div>
@@ -1020,10 +1027,118 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- FIRESTORE DATA STRUCTURE -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--cyan)">▸ Firestore Data Structure</div>
+  <div class="connections" style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2;">
+    <h3>📁 users/{userId}/</h3>
+    <div style="padding-left:20px;color:var(--text2);">
+      <div>├── <span style="color:var(--cyan)">profile</span> <span style="color:var(--text3)">— displayName, email, createdAt, lastSyncAt, tier</span></div>
+      <div>├── <span style="color:var(--cyan)">rosters/</span>{sport} <span style="color:var(--text3)">— teamName, color, players[], battingOrder[]</span></div>
+      <div>├── <span style="color:var(--cyan)">teams/</span>{teamId} <span style="color:var(--text3)">— name, sport, type, color, roster[], isSynced</span></div>
+      <div>├── <span style="color:var(--cyan)">sportConfigs/</span>{sport} <span style="color:var(--text3)">— match format, rules preferences</span></div>
+      <div>├── <span style="color:var(--cyan)">games/</span>{gameId} <span style="color:var(--text3)">— sport, date, teams, scores, duration, participants[]</span></div>
+      <div>│&nbsp;&nbsp; └── <span style="color:var(--green)">scorebook</span> <span style="color:var(--text3)">— full baseball play-by-play (subcollection)</span></div>
+      <div>├── <span style="color:var(--cyan)">stats/</span>{sport} <span style="color:var(--text3)">— career stats aggregated per sport</span></div>
+      <div>├── <span style="color:var(--cyan)">players/</span>{playerId} <span style="color:var(--text3)">— bowling avg/high, batting avg, W-L records</span></div>
+      <div>├── <span style="color:var(--cyan)">teamStats/</span>{teamId} <span style="color:var(--text3)">— W/L/T, pointsFor, pointsAgainst, gamesPlayed</span></div>
+      <div>└── <span style="color:var(--yellow)">marketing_subscribers/</span>{userId} <span style="color:var(--text3)">— email, optedIn, subscribedAt</span></div>
+    </div>
+  </div>
+
+  <div class="connections" style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2;">
+    <h3>📱 Local Storage (filesDir/)</h3>
+    <div style="padding-left:20px;color:var(--text2);">
+      <div>├── <span style="color:var(--green)">teams/</span>{id}.json <span style="color:var(--text3)">— SavedTeam profiles (TeamManager)</span></div>
+      <div>├── <span style="color:var(--green)">game_history/</span>{id}.json <span style="color:var(--text3)">— GameSummary records</span></div>
+      <div>├── <span style="color:var(--green)">game_scorebooks/</span>{id}.json <span style="color:var(--text3)">— BaseballFullGame companion files</span></div>
+      <div>├── <span style="color:var(--green)">player_stats/</span>{id}.json <span style="color:var(--text3)">— PlayerCareerStats per player</span></div>
+      <div>├── <span style="color:var(--green)">team_stats/</span>{id}.json <span style="color:var(--text3)">— TeamCareerStats per team</span></div>
+      <div>├── <span style="color:var(--green)">career_stats.json</span> <span style="color:var(--text3)">— aggregated per-sport career stats</span></div>
+      <div>├── <span style="color:var(--purple)">baseball_game_state.json</span> <span style="color:var(--text3)">— active scorebook (auto-save)</span></div>
+      <div>└── <span style="color:var(--text3)">SharedPreferences</span> <span style="color:var(--text3)">— app settings, scoreboard state, session count</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- THEME SYSTEM -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--accent)">▸ Theme System (Material 3)</div>
+  <div class="node-grid grid-4">
+    <div class="node cat-core">
+      <span class="icon">🎨</span>
+      <div class="name">ScoreFrameUI.kt</div>
+      <div class="file">Theme-aware color utility</div>
+      <div class="desc">Central singleton for all UI colors. 20+ color methods (primary, surface, onSurface, outline, warning, error, etc.) resolving from theme attributes. dp helpers, widget factories.</div>
+      <span class="tag">265+ refs migrated</span>
+    </div>
+    <div class="node cat-core">
+      <span class="icon">🌙</span>
+      <div class="name">Dark Theme</div>
+      <div class="file">values-night/colors.xml</div>
+      <div class="desc">Primary theme. Near-black backgrounds (#0D0D0D), orange accent (#FF9640), light text (#F2F2F2). Matches original app appearance exactly.</div>
+      <span class="tag">Default</span>
+    </div>
+    <div class="node cat-core">
+      <span class="icon">☀️</span>
+      <div class="name">Light Theme</div>
+      <div class="file">values/colors.xml</div>
+      <div class="desc">Warm grey backgrounds (#F5F5F2 cascade), deep orange accent (#8B5000), dark text (#1C1B1F). Not pure white — warm and easy on the eyes.</div>
+      <span class="tag">Optional</span>
+    </div>
+    <div class="node cat-core">
+      <span class="icon">🚫</span>
+      <div class="name">Render Files</div>
+      <div class="file">Scoreboard / Field / Diamond</div>
+      <div class="desc">NOT themed. ScoreboardRenderer, FootballFieldView, BaseballDiamondView, ScorebookCellView use fixed broadcast/field colors. Video output stays consistent regardless of app theme.</div>
+      <span class="tag">Exempt</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FREE vs PRO -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--yellow)">▸ Free vs Pro Feature Map</div>
+  <div class="connections">
+    <h3>🆓 Free Tier</h3>
+    <div class="conn-grid">
+      <div class="conn"><span class="from">All 12 sports</span> <span class="via">full scoring</span></div>
+      <div class="conn"><span class="from">1080p recording</span> <span class="via">10 min cap</span></div>
+      <div class="conn"><span class="from">Remote scoring</span> <span class="via">both phones free</span></div>
+      <div class="conn"><span class="from">Live streaming</span> <span class="via">10 min cap</span></div>
+      <div class="conn"><span class="from">Cloud team sync</span> <span class="via">rosters + teams</span></div>
+      <div class="conn"><span class="from">3 highlights</span> <span class="via">per recording</span></div>
+      <div class="conn"><span class="from">Watermark</span> <span class="via">ScoreFrame.app</span></div>
+      <div class="conn"><span class="from">Ads</span> <span class="via">interstitial + banner</span></div>
+    </div>
+  </div>
+  <div class="connections" style="margin-top:12px;">
+    <h3>⭐ Pro ($7.99/mo or $59.99/yr)</h3>
+    <div class="conn-grid">
+      <div class="conn"><span class="from">4K 60fps</span> <span class="via">unlimited recording</span></div>
+      <div class="conn"><span class="from">Unlimited streaming</span> <span class="via">YouTube + IVS</span></div>
+      <div class="conn"><span class="from">No watermark</span> <span class="via">clean output</span></div>
+      <div class="conn"><span class="from">Ad-free</span> <span class="via">zero ads</span></div>
+      <div class="conn"><span class="from">Full scorebook</span> <span class="via">baseball/softball</span></div>
+      <div class="conn"><span class="from">Cloud game history</span> <span class="via">stats sync</span></div>
+      <div class="conn"><span class="from">Fullscreen mode</span> <span class="via">pull-tab drawer</span></div>
+      <div class="conn"><span class="from">Custom team colors</span> <span class="via">+ names</span></div>
+      <div class="conn"><span class="from">Bluetooth button</span> <span class="via">remote control</span></div>
+      <div class="conn"><span class="from">Stats PDF export</span> <span class="via">scorebook PDF</span></div>
+    </div>
+  </div>
+</div>
+
 <!-- Footer -->
 <div class="footer">
   <p>ScoreFrame · Glavin Labs LLC · com.scoreframe.android · Min SDK 26 (Android 8.0+)</p>
-  <p style="margin-top:6px;">Generated from CLAUDE.md v73 · Architecture current as of March 17, 2026</p>
+  <p style="margin-top:6px;">Generated from CLAUDE.md v74 · Architecture current as of March 19, 2026</p>
 </div>
 
 </div>
