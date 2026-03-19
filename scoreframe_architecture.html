@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoreFrame — System Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #08090C;
+    --surface: #111318;
+    --surface2: #191C24;
+    --surface3: #222630;
+    --accent: #FF9640;
+    --accent-dim: rgba(255, 150, 64, 0.12);
+    --accent-glow: rgba(255, 150, 64, 0.06);
+    --blue: #4EA8DE;
+    --green: #66BB6A;
+    --purple: #B39DDB;
+    --red: #EF5350;
+    --yellow: #FFD54F;
+    --cyan: #4DD0E1;
+    --pink: #F48FB1;
+    --text: #E8E6F0;
+    --text2: rgba(232, 230, 240, 0.55);
+    --text3: rgba(232, 230, 240, 0.3);
+    --border: rgba(255, 255, 255, 0.06);
+    --grid: rgba(255, 255, 255, 0.02);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .header .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header .version {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-top: 6px;
+    opacity: 0.7;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-left: 4px;
+  }
+
+  /* Node Grid */
+  .node-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  @media (max-width: 900px) {
+    .grid-5, .grid-4 { grid-template-columns: repeat(3, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    .grid-5, .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* Node Card */
+  .node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    position: relative;
+    transition: all 0.2s ease;
+    cursor: default;
+    overflow: hidden;
+  }
+
+  .node::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .node:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .node .icon {
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .node .name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+
+  .node .file {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text3);
+    margin-bottom: 6px;
+    word-break: break-all;
+  }
+
+  .node .desc {
+    font-size: 0.72rem;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .node .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 8px;
+    margin-right: 4px;
+  }
+
+  /* Color categories */
+  .cat-core::before { background: var(--accent); }
+  .cat-core .name { color: var(--accent); }
+  .cat-core .tag { background: var(--accent-dim); color: var(--accent); }
+
+  .cat-render::before { background: var(--blue); }
+  .cat-render .name { color: var(--blue); }
+  .cat-render .tag { background: rgba(78, 168, 222, 0.12); color: var(--blue); }
+
+  .cat-sport::before { background: var(--green); }
+  .cat-sport .name { color: var(--green); }
+  .cat-sport .tag { background: rgba(102, 187, 106, 0.12); color: var(--green); }
+
+  .cat-remote::before { background: var(--purple); }
+  .cat-remote .name { color: var(--purple); }
+  .cat-remote .tag { background: rgba(179, 157, 219, 0.12); color: var(--purple); }
+
+  .cat-cloud::before { background: var(--cyan); }
+  .cat-cloud .name { color: var(--cyan); }
+  .cat-cloud .tag { background: rgba(77, 208, 225, 0.12); color: var(--cyan); }
+
+  .cat-money::before { background: var(--yellow); }
+  .cat-money .name { color: var(--yellow); }
+  .cat-money .tag { background: rgba(255, 213, 79, 0.12); color: var(--yellow); }
+
+  .cat-stream::before { background: var(--red); }
+  .cat-stream .name { color: var(--red); }
+  .cat-stream .tag { background: rgba(239, 83, 80, 0.12); color: var(--red); }
+
+  .cat-external::before { background: var(--pink); }
+  .cat-external .name { color: var(--pink); }
+  .cat-external .tag { background: rgba(244, 143, 177, 0.12); color: var(--pink); }
+
+  /* Connection lines section */
+  .connections {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 48px;
+  }
+
+  .connections h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .conn-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 8px;
+  }
+
+  .conn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.72rem;
+    color: var(--text2);
+    padding: 6px 0;
+  }
+
+  .conn .arrow {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    font-size: 0.65rem;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+  }
+
+  .conn .from, .conn .to {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .conn .via {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text3);
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat .num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text3);
+  }
+
+  /* Span full width */
+  .span-2 { grid-column: span 2; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- Header -->
+<div class="header">
+  <h1>Score<span>Frame</span> Architecture</h1>
+  <div class="subtitle">System Ecosystem &amp; Component Map</div>
+  <div class="version">v1.0.15 · CLAUDE.md v73 · March 2026</div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="num">12</div><div class="label">Sports</div></div>
+  <div class="stat"><div class="num">35+</div><div class="label">Source Files</div></div>
+  <div class="stat"><div class="num">7</div><div class="label">External Services</div></div>
+  <div class="stat"><div class="num">3</div><div class="label">Render Targets</div></div>
+  <div class="stat"><div class="num">2</div><div class="label">Streaming Platforms</div></div>
+</div>
+
+<!-- System Overview Diagram -->
+<div class="section">
+  <div class="section-label" style="color:var(--accent)">▸ System Overview</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 16px;margin-bottom:48px;">
+    <svg width="100%" viewBox="0 0 680 880" style="display:block;">
+
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;fill:var(--text)" x="340" y="20" text-anchor="middle">ScoreFrame system architecture</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:11px;fill:var(--text3)" x="340" y="38" text-anchor="middle">v1.0.15 — com.scoreframe.android</text>
+
+      <!-- MainActivity -->
+      <rect x="232" y="58" width="216" height="44" rx="8" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;fill:var(--accent)" x="340" y="84" text-anchor="middle">MainActivity.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:11px;fill:var(--text3)" x="340" y="118" text-anchor="middle">Central orchestrator</text>
+
+      <!-- Nav drawer -->
+      <rect x="40" y="55" width="140" height="50" rx="8" fill="rgba(77,208,225,0.1)" stroke="var(--cyan)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;fill:var(--cyan)" x="110" y="76" text-anchor="middle">Nav drawer</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="110" y="92" text-anchor="middle">Menus, account</text>
+
+      <!-- Icon tray -->
+      <rect x="500" y="55" width="140" height="50" rx="8" fill="rgba(77,208,225,0.1)" stroke="var(--cyan)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;fill:var(--cyan)" x="570" y="76" text-anchor="middle">Icon tray</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="570" y="92" text-anchor="middle">Camera controls</text>
+
+      <!-- Arrows from MainActivity -->
+      <line x1="180" y1="80" x2="232" y2="80" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <line x1="448" y1="80" x2="500" y2="80" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <line x1="340" y1="102" x2="340" y2="140" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <line x1="260" y1="102" x2="130" y2="140" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <line x1="420" y1="102" x2="550" y2="140" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+
+      <!-- Arrow marker -->
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- GL Pipeline -->
+      <rect x="40" y="145" width="180" height="115" rx="10" fill="rgba(179,157,219,0.08)" stroke="var(--purple)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;fill:var(--purple)" x="130" y="168" text-anchor="middle">GL render pipeline</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="130" y="186" text-anchor="middle">RenderThread.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="130" y="200" text-anchor="middle">CameraRenderer.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="130" y="214" text-anchor="middle">EGLManager.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text2)" x="130" y="234" text-anchor="middle">3 output surfaces</text>
+
+      <!-- Scoring Engine -->
+      <rect x="250" y="145" width="180" height="115" rx="10" fill="rgba(102,187,106,0.08)" stroke="var(--green)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;fill:var(--green)" x="340" y="168" text-anchor="middle">Scoring engine</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="340" y="186" text-anchor="middle">ScoreboardType.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="340" y="200" text-anchor="middle">ScoreboardRenderer.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="340" y="214" text-anchor="middle">BowlingScorer.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text2)" x="340" y="234" text-anchor="middle">12 sport panels</text>
+
+      <!-- Data Layer -->
+      <rect x="460" y="145" width="180" height="115" rx="10" fill="rgba(78,168,222,0.08)" stroke="var(--blue)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;fill:var(--blue)" x="550" y="168" text-anchor="middle">Data layer</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="550" y="186" text-anchor="middle">TeamManager.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="550" y="200" text-anchor="middle">GameHistoryManager.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="550" y="214" text-anchor="middle">ScoreFrameSync.kt</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="550" y="234" text-anchor="middle">ScoreFrameAuth.kt</text>
+
+      <!-- Bitmap arrow -->
+      <line x1="220" y1="202" x2="250" y2="202" stroke="var(--green)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="235" y="195">Bitmap</text>
+
+      <!-- Stats arrow -->
+      <line x1="430" y1="202" x2="460" y2="202" stroke="var(--blue)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="445" y="195">Stats</text>
+
+      <!-- Three targets label -->
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;fill:var(--text2)" x="130" y="282" text-anchor="middle">Three render targets</text>
+
+      <!-- Lines to 3 targets -->
+      <line x1="70" y1="260" x2="70" y2="300" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <line x1="130" y1="260" x2="130" y2="300" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <line x1="190" y1="260" x2="190" y2="300" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+
+      <!-- Display -->
+      <rect x="30" y="305" width="90" height="38" rx="6" fill="rgba(255,255,255,0.04)" stroke="var(--text3)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;fill:var(--text2)" x="75" y="328" text-anchor="middle">Display</text>
+
+      <!-- Recording -->
+      <rect x="135" y="305" width="90" height="38" rx="6" fill="rgba(255,255,255,0.04)" stroke="var(--text3)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;fill:var(--text2)" x="180" y="328" text-anchor="middle">Recording</text>
+
+      <!-- Streaming -->
+      <rect x="240" y="305" width="90" height="38" rx="6" fill="rgba(239,83,80,0.1)" stroke="var(--red)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;fill:var(--red)" x="285" y="328" text-anchor="middle">Streaming</text>
+
+      <!-- Recording → MP4 -->
+      <line x1="180" y1="343" x2="180" y2="375" stroke="var(--text3)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <rect x="130" y="380" width="100" height="38" rx="6" fill="rgba(255,255,255,0.04)" stroke="var(--text3)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--text2)" x="180" y="396" text-anchor="middle">MP4 file</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="180" y="410" text-anchor="middle">Movies/ScoreFrame</text>
+
+      <!-- Streaming → StreamEncoder → RTMP -->
+      <line x1="285" y1="343" x2="285" y2="375" stroke="var(--red)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <rect x="240" y="380" width="120" height="44" rx="6" fill="rgba(239,83,80,0.08)" stroke="var(--red)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--red)" x="300" y="398" text-anchor="middle">StreamEncoder</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="300" y="414" text-anchor="middle">RtmpClient.kt</text>
+
+      <!-- RTMP → YouTube/IVS -->
+      <line x1="360" y1="402" x2="410" y2="402" stroke="var(--red)" stroke-width="0.5" marker-end="url(#a1)"/>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="385" y="395">RTMP</text>
+      <rect x="415" y="380" width="210" height="44" rx="6" fill="rgba(239,83,80,0.08)" stroke="var(--red)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;fill:var(--red)" x="520" y="398" text-anchor="middle">YouTube / AWS IVS</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="520" y="414" text-anchor="middle">Live video + chat + metadata</text>
+
+      <!-- Middle row: Custom Views, Remote, Monetization, PDF -->
+      <rect x="40" y="460" width="130" height="44" rx="6" fill="rgba(255,150,64,0.08)" stroke="var(--accent)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--accent)" x="105" y="478" text-anchor="middle">Custom views</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="105" y="494" text-anchor="middle">Football, baseball fields</text>
+
+      <rect x="185" y="460" width="130" height="44" rx="6" fill="rgba(179,157,219,0.08)" stroke="var(--purple)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--purple)" x="250" y="478" text-anchor="middle">Remote scoring</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="250" y="494" text-anchor="middle">Wi-Fi Direct P2P</text>
+
+      <rect x="330" y="460" width="130" height="44" rx="6" fill="rgba(255,213,79,0.08)" stroke="var(--yellow)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--yellow)" x="395" y="478" text-anchor="middle">Monetization</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="395" y="494" text-anchor="middle">Billing, ads, gates</text>
+
+      <rect x="475" y="460" width="130" height="44" rx="6" fill="rgba(102,187,106,0.08)" stroke="var(--green)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--green)" x="540" y="478" text-anchor="middle">PDF export</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="540" y="494" text-anchor="middle">Stats, scorebook</text>
+
+      <!-- External services label -->
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;fill:var(--pink)" x="340" y="545" text-anchor="middle">External services</text>
+
+      <!-- Dashed boundary -->
+      <rect x="30" y="558" width="620" height="210" rx="12" fill="none" stroke="var(--text3)" stroke-width="0.5" stroke-dasharray="4 4"/>
+
+      <!-- Row 1: Firebase Auth, Firestore, Remote Config, AdMob -->
+      <rect x="50" y="575" width="130" height="44" rx="6" fill="rgba(244,143,177,0.08)" stroke="var(--pink)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--pink)" x="115" y="593" text-anchor="middle">Firebase Auth</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="115" y="609" text-anchor="middle">Credential Manager</text>
+
+      <rect x="200" y="575" width="130" height="44" rx="6" fill="rgba(244,143,177,0.08)" stroke="var(--pink)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--pink)" x="265" y="593" text-anchor="middle">Firestore</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="265" y="609" text-anchor="middle">Teams, games, stats</text>
+
+      <rect x="350" y="575" width="130" height="44" rx="6" fill="rgba(244,143,177,0.08)" stroke="var(--pink)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--pink)" x="415" y="593" text-anchor="middle">Remote Config</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="415" y="609" text-anchor="middle">Force update ctrl</text>
+
+      <rect x="500" y="575" width="130" height="44" rx="6" fill="rgba(255,213,79,0.08)" stroke="var(--yellow)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--yellow)" x="565" y="593" text-anchor="middle">AdMob</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="565" y="609" text-anchor="middle">Interstitial, banner</text>
+
+      <!-- Row 2: YouTube, IVS, Play Billing, GitHub Pages -->
+      <rect x="50" y="635" width="130" height="44" rx="6" fill="rgba(239,83,80,0.08)" stroke="var(--red)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--red)" x="115" y="653" text-anchor="middle">YouTube APIs</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="115" y="669" text-anchor="middle">Live, chat, OAuth</text>
+
+      <rect x="200" y="635" width="130" height="44" rx="6" fill="rgba(239,83,80,0.08)" stroke="var(--red)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--red)" x="265" y="653" text-anchor="middle">AWS IVS</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="265" y="669" text-anchor="middle">Private streaming</text>
+
+      <rect x="350" y="635" width="130" height="44" rx="6" fill="rgba(255,213,79,0.08)" stroke="var(--yellow)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--yellow)" x="415" y="653" text-anchor="middle">Play Billing</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="415" y="669" text-anchor="middle">Pro subscriptions</text>
+
+      <rect x="500" y="635" width="130" height="44" rx="6" fill="rgba(77,208,225,0.08)" stroke="var(--cyan)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;fill:var(--cyan)" x="565" y="653" text-anchor="middle">GitHub Pages</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="565" y="669" text-anchor="middle">scoreframe.app</text>
+
+      <!-- Data layer → Firestore connection -->
+      <line x1="550" y1="260" x2="550" y2="530" stroke="var(--blue)" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <line x1="550" y1="530" x2="265" y2="530" stroke="var(--blue)" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <line x1="265" y1="530" x2="265" y2="575" stroke="var(--blue)" stroke-width="0.5" stroke-dasharray="3 3" marker-end="url(#a1)"/>
+
+      <!-- Second phone -->
+      <rect x="175" y="800" width="330" height="50" rx="8" fill="rgba(77,208,225,0.08)" stroke="var(--cyan)" stroke-width="0.5"/>
+      <text style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;fill:var(--cyan)" x="340" y="821" text-anchor="middle">Second phone (controller)</text>
+      <text style="font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text3)" x="340" y="839" text-anchor="middle">Remote scoring via TCP / Wi-Fi Direct</text>
+
+      <!-- Remote scoring → Second phone -->
+      <line x1="250" y1="504" x2="250" y2="530" stroke="var(--purple)" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <path d="M250 530L340 530L340 800" fill="none" stroke="var(--purple)" stroke-width="0.5" stroke-dasharray="3 3" marker-end="url(#a1)"/>
+
+      <!-- Footer -->
+      <text style="font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--text3)" x="340" y="872" text-anchor="middle">Camera2 + OpenGL ES + MediaCodec + Hand-rolled RTMP — no FFmpeg</text>
+
+    </svg>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Core Engine</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>GL / Rendering</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Sports / Scoring</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Remote / Network</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Cloud / Data</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Monetization</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Streaming</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--pink)"></div>External Services</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- CORE ENGINE -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--accent)">▸ Core Engine</div>
+  <div class="node-grid grid-5">
+    <div class="node cat-core">
+      <span class="icon">📱</span>
+      <div class="name">MainActivity</div>
+      <div class="file">MainActivity.kt</div>
+      <div class="desc">Central orchestrator. All scoring panels, UI state, recording controls, streaming triggers, dialog management. The largest file in the project.</div>
+      <span class="tag">Entry Point</span>
+    </div>
+    <div class="node cat-core">
+      <span class="icon">🎥</span>
+      <div class="name">Camera Engine</div>
+      <div class="file">CameraEngine.kt</div>
+      <div class="desc">Camera2 API wrapper. Opens/closes camera, manages preview surface, handles zoom, focus, orientation. Feeds frames to GL pipeline.</div>
+      <span class="tag">Camera2</span>
+    </div>
+    <div class="node cat-core">
+      <span class="icon">🎙️</span>
+      <div class="name">Audio Recorder</div>
+      <div class="file">AudioRecorder.kt</div>
+      <div class="desc">PCM audio capture from microphone. Feeds raw audio to both MediaRecorder (recording) and StreamEncoder (streaming). Mute toggle support.</div>
+      <span class="tag">AudioRecord</span>
+    </div>
+    <div class="node cat-core">
+      <span class="icon">💾</span>
+      <div class="name">Media Encoder</div>
+      <div class="file">MediaRecorderEncoder.kt</div>
+      <div class="desc">H.264 + AAC encoding to MP4. Receives GL-composited frames (camera + scoreboard) as input surface. Saves to Movies/ScoreFrame.</div>
+      <span class="tag">MediaCodec</span>
+    </div>
+    <div class="node cat-core">
+      <span class="icon">✂️</span>
+      <div class="name">Highlight Extractor</div>
+      <div class="file">PostProcessingHighlightExtractor.kt</div>
+      <div class="desc">Extracts highlight clips from recorded video based on star-marked timestamps. Configurable duration (5/10/20s).</div>
+      <span class="tag">Post-Process</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- GL / RENDERING PIPELINE -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--blue)">▸ GL Rendering Pipeline</div>
+  <div class="node-grid grid-4">
+    <div class="node cat-render">
+      <span class="icon">🔺</span>
+      <div class="name">Render Thread</div>
+      <div class="file">RenderThread.kt</div>
+      <div class="desc">Triple-surface GL render loop. Composites camera feed + scoreboard overlay to three targets simultaneously: display, recording, and stream.</div>
+      <span class="tag">3 Targets</span>
+    </div>
+    <div class="node cat-render">
+      <span class="icon">🖼️</span>
+      <div class="name">Camera Renderer</div>
+      <div class="file">CameraRenderer.kt</div>
+      <div class="desc">OpenGL ES shader programs. Camera texture rendering, scoreboard bitmap overlay positioning, portrait rotation (90° CW MVP matrix), watermark.</div>
+      <span class="tag">OpenGL ES</span>
+    </div>
+    <div class="node cat-render">
+      <span class="icon">⚡</span>
+      <div class="name">EGL Manager</div>
+      <div class="file">EGLManager.kt</div>
+      <div class="desc">EGL context and surface management. Creates shared context for multi-surface rendering (display + recording + stream).</div>
+      <span class="tag">EGL 1.4</span>
+    </div>
+    <div class="node cat-render">
+      <span class="icon">📊</span>
+      <div class="name">Scoreboard Renderer</div>
+      <div class="file">ScoreboardRenderer.kt</div>
+      <div class="desc">Generates scoreboard bitmaps for all 12 sports. Broadcast-style layouts with team gradients, animated scores, sport-specific stats. Fed to CameraRenderer as GL texture.</div>
+      <span class="tag">Canvas → Bitmap</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SPORTS & SCORING -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--green)">▸ Sports &amp; Scoring</div>
+  <div class="node-grid grid-5">
+    <div class="node cat-sport">
+      <span class="icon">🏟️</span>
+      <div class="name">Scoreboard Types</div>
+      <div class="file">ScoreboardType.kt</div>
+      <div class="desc">Sealed class hierarchy. Data classes for all 12 sports with sport-specific fields (downs, frames, sets, at-bats, etc).</div>
+      <span class="tag">12 Sports</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">🎳</span>
+      <div class="name">Bowling Scorer</div>
+      <div class="file">BowlingScorer.kt</div>
+      <div class="desc">Automatic bowling score calculation. Strike/spare detection, 10th frame logic, multi-bowler support. KMP-ready pure logic.</div>
+      <span class="tag">KMP Ready</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">🏈</span>
+      <div class="name">Football Field View</div>
+      <div class="file">FootballFieldView.kt</div>
+      <div class="desc">Interactive custom View. Draggable ball + first-down marker, auto-play resolution, goal posts, kickoff/punt return, penalty logic, zone swap.</div>
+      <span class="tag">Custom View</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">⚾</span>
+      <div class="name">Baseball Diamond</div>
+      <div class="file">BaseballDiamondView.kt</div>
+      <div class="desc">Interactive field with 3D-rendered PNG. Figurine runners, fielder stick-figures at 9 positions, tap targets for scoring. Softball variant with gold pitcher circle.</div>
+      <span class="tag">Custom View</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">📖</span>
+      <div class="name">Full Scorebook</div>
+      <div class="file">BaseballFullGame.kt</div>
+      <div class="desc">Complete digital scorebook. At-bat records, pitch tracking, runner identity, half-inning records, pitcher stats. JSON persistence.</div>
+      <span class="tag">Pro Feature</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">📄</span>
+      <div class="name">Scorebook Exporter</div>
+      <div class="file">BaseballScorebookExporter.kt</div>
+      <div class="desc">Multi-page PDF: box score, team scoresheets with diamond notation, pitcher summary, play-by-play log. FileProvider sharing.</div>
+      <span class="tag">PDF Export</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">📐</span>
+      <div class="name">Scorebook Cell</div>
+      <div class="file">ScorebookCellView.kt</div>
+      <div class="desc">Custom View: traditional scorebook cell with basepath lines, result labels, circled out numbers. Matches PDF export notation.</div>
+      <span class="tag">Custom View</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">📊</span>
+      <div class="name">Stats Exporter</div>
+      <div class="file">StatsExporter.kt</div>
+      <div class="desc">General stats export: email + PDF for all sports. Sport-specific stat formatting.</div>
+      <span class="tag">PDF / Email</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">⚙️</span>
+      <div class="name">Sport Settings</div>
+      <div class="file">SportSettingsManager.kt</div>
+      <div class="desc">Per-sport configuration persistence. Team names, colors, rosters, match formats. Legacy system — being replaced by TeamManager.</div>
+      <span class="tag">Legacy</span>
+    </div>
+    <div class="node cat-sport">
+      <span class="icon">🏅</span>
+      <div class="name">Feature Gate</div>
+      <div class="file">FeatureGate.kt</div>
+      <div class="desc">Pro vs Free feature gates. 4K, highlights, custom colors, fullscreen, streaming, scorebook, stats export, ad-free, watermark removal.</div>
+      <span class="tag">Gate Logic</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- REMOTE / NETWORKING -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--purple)">▸ Remote Scoring &amp; Networking</div>
+  <div class="node-grid grid-4">
+    <div class="node cat-remote">
+      <span class="icon">📡</span>
+      <div class="name">Remote Server</div>
+      <div class="file">RemoteScoringServer.kt</div>
+      <div class="desc">TCP server on camera phone. Broadcasts scoreboard state, receives score commands, sends camera preview frames. Thread.join cleanup on stop.</div>
+      <span class="tag">TCP Socket</span>
+    </div>
+    <div class="node cat-remote">
+      <span class="icon">🎮</span>
+      <div class="name">Remote Client</div>
+      <div class="file">RemoteScoringClient.kt</div>
+      <div class="desc">TCP client on controller phone. Sends score commands, receives state updates + camera preview. Bounded command queue (500 max).</div>
+      <span class="tag">TCP Socket</span>
+    </div>
+    <div class="node cat-remote">
+      <span class="icon">📝</span>
+      <div class="name">Protocol</div>
+      <div class="file">RemoteScoringProtocol.kt</div>
+      <div class="desc">Wire protocol for remote scoring. Serializes/deserializes all 12 sports' state. PiP position commands. Additive versioning.</div>
+      <span class="tag">JSON Wire</span>
+    </div>
+    <div class="node cat-remote">
+      <span class="icon">📶</span>
+      <div class="name">Wi-Fi Direct</div>
+      <div class="file">WifiDirectManager.kt</div>
+      <div class="desc">Wi-Fi Direct peer discovery and group formation. NSD fallback. Peer filtering (phones/tablets only, excludes TVs/Rokus). No internet required.</div>
+      <span class="tag">P2P</span>
+    </div>
+    <div class="node cat-remote">
+      <span class="icon">🔍</span>
+      <div class="name">NSD Helper</div>
+      <div class="file">NsdHelper.kt</div>
+      <div class="desc">Network Service Discovery for auto-finding the camera phone on local Wi-Fi. Fallback to manual IP entry.</div>
+      <span class="tag">mDNS</span>
+    </div>
+    <div class="node cat-remote">
+      <span class="icon">📸</span>
+      <div class="name">PiP Camera</div>
+      <div class="file">PipCameraHelper.kt</div>
+      <div class="desc">Second camera for picture-in-picture overlay. Crop box with drag position. Orientation compensation. Camera 0 handoff with CameraEngine.</div>
+      <span class="tag">Camera2</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STREAMING -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--red)">▸ Live Streaming</div>
+  <div class="node-grid grid-4">
+    <div class="node cat-stream">
+      <span class="icon">📺</span>
+      <div class="name">Stream Encoder</div>
+      <div class="file">StreamEncoder.kt</div>
+      <div class="desc">Third GL render target. MediaCodec H.264 + AAC encoding for live stream. 48kHz PCM, codec config fallback. Feeds RTMP client.</div>
+      <span class="tag">MediaCodec</span>
+    </div>
+    <div class="node cat-stream">
+      <span class="icon">🔴</span>
+      <div class="name">RTMP Client</div>
+      <div class="file">RtmpClient.kt</div>
+      <div class="desc">Hand-rolled RTMP transport (no FFmpeg). Platform presets (YouTube/Twitch/Facebook/IVS/Custom). AtomicBoolean reconnect guard. SPS/PPS caching.</div>
+      <span class="tag">RTMP</span>
+    </div>
+    <div class="node cat-stream">
+      <span class="icon">🟣</span>
+      <div class="name">IVS Manager</div>
+      <div class="file">IvsManager.kt</div>
+      <div class="desc">AWS IVS channel management. Sig V4 signing (zero deps). CreateChannel, DeleteChannel, PutMetadata with score data. Cost tracking.</div>
+      <span class="tag">AWS IVS</span>
+    </div>
+    <div class="node cat-stream">
+      <span class="icon">▶️</span>
+      <div class="name">YouTube Live</div>
+      <div class="file">YouTubeLiveManager.kt</div>
+      <div class="desc">YouTube Live Streaming API. Create/bind/start/stop broadcasts. enableAutoStart/AutoStop. Viewer count, stream health diagnostics, auto-thumbnail.</div>
+      <span class="tag">YouTube API</span>
+    </div>
+    <div class="node cat-stream">
+      <span class="icon">🔐</span>
+      <div class="name">YouTube Auth</div>
+      <div class="file">YouTubeAuthManager.kt</div>
+      <div class="desc">Google Sign-In with youtube.force-ssl scope. OAuth token management. User photo URL for stream thumbnails.</div>
+      <span class="tag">OAuth 2.0</span>
+    </div>
+    <div class="node cat-stream">
+      <span class="icon">💬</span>
+      <div class="name">YouTube Chat</div>
+      <div class="file">YouTubeChatManager.kt</div>
+      <div class="desc">Live chat polling + send. Exponential backoff. Super Chat gold highlighting. Floating overlay with 4-message display.</div>
+      <span class="tag">Chat API</span>
+    </div>
+    <div class="node cat-stream">
+      <span class="icon">📺</span>
+      <div class="name">Stream Viewer</div>
+      <div class="file">StreamViewerActivity.kt</div>
+      <div class="desc">ExoPlayer Media3 HLS playback. ID3 timed metadata → score ticker. Deep links from share URLs. IVS + YouTube playback.</div>
+      <span class="tag">ExoPlayer</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- CLOUD / DATA -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--cyan)">▸ Cloud &amp; Data Persistence</div>
+  <div class="node-grid grid-4">
+    <div class="node cat-cloud">
+      <span class="icon">🔑</span>
+      <div class="name">Auth</div>
+      <div class="file">ScoreFrameAuth.kt</div>
+      <div class="desc">Credential Manager API (replaced legacy Google Sign-In). Auto-sign-in on launch, bottom sheet sign-in, Firebase Auth bridge. Email/password support.</div>
+      <span class="tag">Credential Mgr</span>
+    </div>
+    <div class="node cat-cloud">
+      <span class="icon">☁️</span>
+      <div class="name">Cloud Sync</div>
+      <div class="file">ScoreFrameSync.kt</div>
+      <div class="desc">Firestore CRUD for teams, rosters, games, player stats, career stats, marketing subs. Upload feedback. Cloud restore on new device.</div>
+      <span class="tag">Firestore</span>
+    </div>
+    <div class="node cat-cloud">
+      <span class="icon">👥</span>
+      <div class="name">Team Manager</div>
+      <div class="file">TeamManager.kt</div>
+      <div class="desc">SavedTeam CRUD singleton. JSON file persistence, in-memory cache, cross-sport aliases (Baseball↔Softball). Individuals + teams.</div>
+      <span class="tag">Local + Cloud</span>
+    </div>
+    <div class="node cat-cloud">
+      <span class="icon">📜</span>
+      <div class="name">Game History</div>
+      <div class="file">GameHistoryManager.kt</div>
+      <div class="desc">Game summaries, career stats per player, scorebook companion files. Query by team/player. Migration helpers.</div>
+      <span class="tag">Local + Cloud</span>
+    </div>
+    <div class="node cat-cloud">
+      <span class="icon">🔄</span>
+      <div class="name">App Update</div>
+      <div class="file">AppUpdateChecker.kt</div>
+      <div class="desc">In-app update via Play Core. Firebase Remote Config controls flexible vs immediate (forced) updates. Disabled in debug.</div>
+      <span class="tag">Remote Config</span>
+    </div>
+    <div class="node cat-cloud">
+      <span class="icon">🏗️</span>
+      <div class="name">Application</div>
+      <div class="file">ScoreFrameApplication.kt</div>
+      <div class="desc">Application class. Init order: SportSettingsManager → TeamManager → migration. Remote Config defaults. Firebase init.</div>
+      <span class="tag">Lifecycle</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MONETIZATION -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--yellow)">▸ Monetization</div>
+  <div class="node-grid grid-4">
+    <div class="node cat-money">
+      <span class="icon">💳</span>
+      <div class="name">Billing</div>
+      <div class="file">BillingManager.kt</div>
+      <div class="desc">Google Play Billing Library. Pro subscription ($7.99/mo or $59.99/yr). 7-day free trial. Subscription state drives FeatureGate.</div>
+      <span class="tag">Play Billing</span>
+    </div>
+    <div class="node cat-money">
+      <span class="icon">📢</span>
+      <div class="name">Ad Manager</div>
+      <div class="file">AdManager.kt</div>
+      <div class="desc">AdMob integration. Progressive interstitial frequency (scales with session count). Rewarded ads for stats export. Banner ads in scoring panel.</div>
+      <span class="tag">AdMob</span>
+    </div>
+    <div class="node cat-money">
+      <span class="icon">💎</span>
+      <div class="name">Upgrade Dialog</div>
+      <div class="file">UpgradeDialog.kt</div>
+      <div class="desc">Pro upgrade prompt with feature list, pricing, trial CTA. Shown when user taps a Pro-gated feature.</div>
+      <span class="tag">Conversion</span>
+    </div>
+    <div class="node cat-money">
+      <span class="icon">🎚️</span>
+      <div class="name">Subscription Tier</div>
+      <div class="file">SubscriptionTier.kt</div>
+      <div class="desc">Enum: FREE, PRO. Debug tier switcher for testing. Drives all feature gates and ad behavior.</div>
+      <span class="tag">State</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- EXTERNAL SERVICES -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label" style="color:var(--pink)">▸ External Services</div>
+  <div class="node-grid grid-4">
+    <div class="node cat-external">
+      <span class="icon">🔥</span>
+      <div class="name">Firebase Auth</div>
+      <div class="desc">Google Sign-In + Email/Password authentication. User identity for Firestore access.</div>
+      <span class="tag">Google Cloud</span>
+    </div>
+    <div class="node cat-external">
+      <span class="icon">🗄️</span>
+      <div class="name">Cloud Firestore</div>
+      <div class="desc">NoSQL document database. Teams, rosters, games, stats, marketing subscribers. Offline persistence built in.</div>
+      <span class="tag">Google Cloud</span>
+    </div>
+    <div class="node cat-external">
+      <span class="icon">⚙️</span>
+      <div class="name">Remote Config</div>
+      <div class="desc">Firebase Remote Config. Controls force_update_min_version and update_prompt_enabled without app update.</div>
+      <span class="tag">Firebase</span>
+    </div>
+    <div class="node cat-external">
+      <span class="icon">▶️</span>
+      <div class="name">YouTube APIs</div>
+      <div class="desc">Data API v3, Live Streaming API, Live Chat API. OAuth via Credential Manager. Stream creation, thumbnails, chat.</div>
+      <span class="tag">Google</span>
+    </div>
+    <div class="node cat-external">
+      <span class="icon">🟣</span>
+      <div class="name">AWS IVS</div>
+      <div class="desc">Interactive Video Service. Private streaming with Sig V4 auth. HLS playback via ExoPlayer. Timed metadata for scores.</div>
+      <span class="tag">Amazon</span>
+    </div>
+    <div class="node cat-external">
+      <span class="icon">📢</span>
+      <div class="name">Google AdMob</div>
+      <div class="desc">Interstitial + rewarded + banner ads. Progressive frequency engine. Personalization opt-out via device settings.</div>
+      <span class="tag">Google</span>
+    </div>
+    <div class="node cat-external">
+      <span class="icon">🛒</span>
+      <div class="name">Google Play Billing</div>
+      <div class="desc">Subscription management. Pro monthly/yearly plans. Free trial. Receipt validation. Play Console reporting.</div>
+      <span class="tag">Google</span>
+    </div>
+    <div class="node cat-external">
+      <span class="icon">🌐</span>
+      <div class="name">GitHub Pages</div>
+      <div class="desc">scoreframe.app website hosting. Landing page, beta page, privacy policy, IVS watch page. Favicon set.</div>
+      <span class="tag">Static</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- KEY DATA FLOWS -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="connections">
+  <h3>⚡ Key Data Flows</h3>
+  <div class="conn-grid">
+    <div class="conn"><span class="from">Camera</span> <span class="arrow">→</span> <span class="to">GL Pipeline</span> <span class="via">SurfaceTexture</span></div>
+    <div class="conn"><span class="from">GL Pipeline</span> <span class="arrow">→</span> <span class="to">Display</span> <span class="via">Surface 1</span></div>
+    <div class="conn"><span class="from">GL Pipeline</span> <span class="arrow">→</span> <span class="to">Recording</span> <span class="via">Surface 2 → MediaCodec → MP4</span></div>
+    <div class="conn"><span class="from">GL Pipeline</span> <span class="arrow">→</span> <span class="to">Stream</span> <span class="via">Surface 3 → StreamEncoder → RTMP</span></div>
+    <div class="conn"><span class="from">Scoreboard</span> <span class="arrow">→</span> <span class="to">GL Pipeline</span> <span class="via">Canvas → Bitmap → GL Texture</span></div>
+    <div class="conn"><span class="from">Score Change</span> <span class="arrow">→</span> <span class="to">Scoreboard</span> <span class="via">ScoreboardType → Renderer → Bitmap</span></div>
+    <div class="conn"><span class="from">Remote Client</span> <span class="arrow">⇄</span> <span class="to">Remote Server</span> <span class="via">TCP / Wi-Fi Direct</span></div>
+    <div class="conn"><span class="from">RTMP Client</span> <span class="arrow">→</span> <span class="to">YouTube / IVS</span> <span class="via">RTMP over TCP</span></div>
+    <div class="conn"><span class="from">Team/Game Data</span> <span class="arrow">⇄</span> <span class="to">Firestore</span> <span class="via">ScoreFrameSync.kt</span></div>
+    <div class="conn"><span class="from">Sign-In</span> <span class="arrow">→</span> <span class="to">Firebase Auth</span> <span class="via">Credential Manager → ID Token</span></div>
+    <div class="conn"><span class="from">Score Event</span> <span class="arrow">→</span> <span class="to">IVS Metadata</span> <span class="via">PutMetadata (Sig V4)</span></div>
+    <div class="conn"><span class="from">Highlight ⭐</span> <span class="arrow">→</span> <span class="to">Clip Extraction</span> <span class="via">Timestamp → PostProcessing → MP4</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- RENDER PIPELINE DETAIL -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="connections">
+  <h3>🎬 Triple-Surface Render Pipeline</h3>
+  <div class="conn-grid">
+    <div class="conn"><span class="from">Camera2</span> <span class="arrow">→</span> <span class="to">SurfaceTexture</span> <span class="via">Hardware frames</span></div>
+    <div class="conn"><span class="from">SurfaceTexture</span> <span class="arrow">→</span> <span class="to">GL External Texture</span> <span class="via">OES_EGL_image</span></div>
+    <div class="conn"><span class="from">ScoreboardRenderer</span> <span class="arrow">→</span> <span class="to">Bitmap</span> <span class="via">Canvas draw (12 sports)</span></div>
+    <div class="conn"><span class="from">Bitmap</span> <span class="arrow">→</span> <span class="to">GL Texture 2D</span> <span class="via">glTexImage2D</span></div>
+    <div class="conn"><span class="from">CameraRenderer</span> <span class="arrow">→</span> <span class="to">Composite Frame</span> <span class="via">Camera + Scoreboard + Watermark + PiP</span></div>
+    <div class="conn"><span class="from">Composite</span> <span class="arrow">→</span> <span class="to">Surface 1: SurfaceView</span> <span class="via">Live preview on screen</span></div>
+    <div class="conn"><span class="from">Composite</span> <span class="arrow">→</span> <span class="to">Surface 2: MediaCodec</span> <span class="via">→ MP4 file (if recording)</span></div>
+    <div class="conn"><span class="from">Composite</span> <span class="arrow">→</span> <span class="to">Surface 3: StreamEncoder</span> <span class="via">→ RTMP (if streaming)</span></div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p>ScoreFrame · Glavin Labs LLC · com.scoreframe.android · Min SDK 26 (Android 8.0+)</p>
+  <p style="margin-top:6px;">Generated from CLAUDE.md v73 · Architecture current as of March 17, 2026</p>
+</div>
+
+</div>
+</body>
+</html>
