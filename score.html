@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D0D0D">
+<title>ScoreFrame — Web Scorer</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --bg-deepest: #0D0D0D;
+    --bg-deep: #141414;
+    --bg-surface: #1E1E1E;
+    --bg-elevated: #272727;
+    --bg-hover: #333333;
+    --accent: #FF9640;
+    --accent-dim: rgba(255, 150, 64, 0.15);
+    --accent-dark: #CC7733;
+    --text-primary: #E0E0E0;
+    --text-secondary: #999999;
+    --text-muted: #666666;
+    --success: #4CAF50;
+    --warning: #FF9800;
+    --error: #F44336;
+    --recording-red: #CC2222;
+    --blue-default: #1565C0;
+    --red-default: #C62828;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-deepest);
+    color: var(--text-primary);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+}
+body { padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+
+/* ── Status Bar ─────────────────────────────────────────────── */
+#statusBar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--bg-elevated);
+    font-size: 13px;
+}
+.status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+}
+.status-dot.disconnected { background: var(--error); }
+.status-dot.waiting { background: var(--warning); animation: pulse 1.5s ease-in-out infinite; }
+.status-dot.recording { background: var(--recording-red); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+#statusText { flex: 1; color: var(--text-secondary); }
+#recIndicator {
+    display: none; align-items: center; gap: 4px;
+    color: var(--recording-red); font-weight: 600; font-size: 12px;
+}
+#recIndicator .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--recording-red); animation: pulse 1s ease-in-out infinite; }
+#disconnectBanner {
+    display: none; padding: 6px 16px; text-align: center;
+    background: rgba(244, 67, 54, 0.15); color: var(--error); font-size: 12px;
+}
+
+/* ── Screens ────────────────────────────────────────────────── */
+.screen { display: none; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── Join Screen ────────────────────────────────────────────── */
+#joinScreen {
+    align-items: center; justify-content: center;
+    min-height: calc(100vh - 50px); min-height: calc(100dvh - 50px);
+    padding: 24px;
+    text-align: center;
+}
+#joinScreen .logo { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+#joinScreen .logo span { color: var(--accent); }
+#joinScreen .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
+#codeInput {
+    width: 280px; max-width: 100%;
+    font-size: 32px; font-weight: 700; text-align: center;
+    letter-spacing: 8px; text-transform: uppercase;
+    padding: 16px; border-radius: 12px;
+    background: var(--bg-surface); border: 2px solid var(--bg-elevated);
+    color: var(--text-primary); outline: none;
+    caret-color: var(--accent);
+    transition: border-color 0.2s;
+}
+#codeInput:focus { border-color: var(--accent); }
+#codeInput::placeholder { letter-spacing: 4px; font-size: 18px; color: var(--text-muted); }
+#joinBtn {
+    margin-top: 20px; padding: 14px 48px;
+    font-size: 18px; font-weight: 600; border: none; border-radius: 10px;
+    background: var(--accent); color: #1A1A1A; cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+}
+#joinBtn:active { transform: scale(0.96); }
+#joinBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+#joinError {
+    margin-top: 12px; color: var(--error); font-size: 14px;
+    min-height: 20px;
+}
+.join-hint { margin-top: 24px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+
+/* ── Waiting Screen ─────────────────────────────────────────── */
+#waitingScreen {
+    align-items: center; justify-content: center;
+    min-height: calc(100vh - 50px); min-height: calc(100dvh - 50px);
+    padding: 24px; text-align: center;
+}
+.spinner {
+    width: 48px; height: 48px; border: 3px solid var(--bg-elevated);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin-bottom: 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#waitingText { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; }
+#waitingSport { font-size: 14px; color: var(--text-muted); }
+#cancelJoinBtn {
+    margin-top: 24px; padding: 10px 24px;
+    font-size: 14px; border: 1px solid var(--bg-elevated); border-radius: 8px;
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+}
+
+/* ── Scoring Screen ─────────────────────────────────────────── */
+#scoringScreen { min-height: calc(100vh - 50px); min-height: calc(100dvh - 50px); }
+#sportHeader {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    background: var(--bg-deep); border-bottom: 1px solid var(--bg-elevated);
+}
+#sportEmoji { font-size: 22px; }
+#sportLabel { font-size: 15px; font-weight: 600; flex: 1; }
+#eventLabel { font-size: 12px; color: var(--accent); }
+
+/* Score Display — shared across all team sports */
+.score-display {
+    display: flex; align-items: stretch; justify-content: center;
+    padding: 12px 8px;
+    background: var(--bg-deep);
+}
+.team-score-block {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 8px 4px; border-radius: 10px; position: relative; overflow: hidden;
+}
+.team-score-block::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.team-name { font-size: 13px; font-weight: 600; text-transform: uppercase; opacity: 0.9; margin-bottom: 2px; }
+.team-score { font-size: 48px; font-weight: 800; line-height: 1; }
+.team-detail { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.score-divider {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0 8px; min-width: 50px;
+}
+.score-divider .period-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+.score-divider .period-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+.score-divider .vs-dash { font-size: 24px; color: var(--text-muted); font-weight: 300; }
+
+/* Scoring Panel Container */
+#scoringPanel {
+    flex: 1; overflow-y: auto; padding: 12px; padding-bottom: calc(60px + var(--safe-bottom));
+    display: flex; flex-direction: column; gap: 10px;
+}
+
+/* Button styles */
+.btn-row { display: flex; gap: 8px; }
+.btn-row > * { flex: 1; }
+.score-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 52px; padding: 8px 4px;
+    border: none; border-radius: 10px;
+    font-size: 16px; font-weight: 600;
+    color: #fff; cursor: pointer;
+    transition: transform 0.08s, filter 0.08s;
+    -webkit-user-select: none; user-select: none;
+}
+.score-btn:active { transform: scale(0.94); filter: brightness(0.85); }
+.score-btn .btn-label { font-size: 11px; opacity: 0.8; font-weight: 400; margin-top: 1px; }
+.score-btn.home-btn { background: var(--blue-default); }
+.score-btn.away-btn { background: var(--red-default); }
+.score-btn.neutral-btn { background: var(--bg-elevated); color: var(--text-primary); }
+.score-btn.accent-btn { background: var(--accent); color: #1A1A1A; }
+.score-btn.small { min-height: 42px; font-size: 14px; }
+.score-btn.danger { background: rgba(244, 67, 54, 0.2); color: var(--error); }
+.score-btn.success-btn { background: rgba(76, 175, 80, 0.2); color: var(--success); }
+
+/* Section label */
+.section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    color: var(--text-muted); letter-spacing: 1px; padding: 4px 0;
+}
+
+/* Toggle group */
+.toggle-group {
+    display: flex; gap: 4px; background: var(--bg-surface); border-radius: 8px; padding: 3px;
+}
+.toggle-btn {
+    flex: 1; padding: 8px 4px; border: none; border-radius: 6px;
+    background: transparent; color: var(--text-secondary);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all 0.15s;
+}
+.toggle-btn.active { background: var(--accent); color: #1A1A1A; font-weight: 600; }
+
+/* Stat row */
+.stat-row {
+    display: flex; align-items: center; padding: 6px 12px;
+    background: var(--bg-surface); border-radius: 8px;
+}
+.stat-row .stat-label { flex: 1; font-size: 13px; color: var(--text-secondary); }
+.stat-row .stat-value { font-size: 15px; font-weight: 600; min-width: 32px; text-align: center; }
+.stat-row .stat-btn {
+    width: 32px; height: 32px; border: none; border-radius: 6px;
+    background: var(--bg-elevated); color: var(--text-primary);
+    font-size: 18px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.stat-row .stat-btn:active { transform: scale(0.9); }
+
+/* Serve indicator */
+.serve-indicator {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; color: var(--accent); font-weight: 600;
+}
+
+/* Base runners diamond */
+.diamond-container { display: flex; justify-content: center; padding: 8px 0; }
+.diamond {
+    position: relative; width: 80px; height: 80px;
+}
+.base {
+    position: absolute; width: 18px; height: 18px;
+    transform: rotate(45deg); border: 2px solid var(--text-muted);
+    border-radius: 2px; cursor: pointer; transition: background 0.15s;
+}
+.base.active { background: var(--accent); border-color: var(--accent); }
+.base.first { right: 0; top: 50%; transform: rotate(45deg) translate(-25%, -50%); }
+.base.second { left: 50%; top: 0; transform: rotate(45deg) translate(-50%, 0); }
+.base.third { left: 0; top: 50%; transform: rotate(45deg) translate(25%, -50%); }
+.count-display {
+    display: flex; gap: 12px; justify-content: center; align-items: center;
+    font-size: 14px; padding: 4px 0;
+}
+.count-display .count-item { display: flex; align-items: center; gap: 4px; }
+.count-display .count-dots { display: flex; gap: 3px; }
+.count-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--text-muted); cursor: pointer;
+    transition: background 0.15s;
+}
+.count-dot.active { border-color: currentColor; }
+.count-dot.ball.active { background: #4CAF50; border-color: #4CAF50; }
+.count-dot.strike.active { background: var(--error); border-color: var(--error); }
+.count-dot.out.active { background: var(--warning); border-color: var(--warning); }
+
+/* Bowling specific */
+.bowling-scorecard {
+    background: var(--bg-surface); border-radius: 10px; overflow: hidden;
+    font-size: 12px;
+}
+.bowling-scorecard table { width: 100%; border-collapse: collapse; }
+.bowling-scorecard th, .bowling-scorecard td {
+    border: 1px solid var(--bg-elevated); padding: 4px 2px; text-align: center;
+}
+.bowling-scorecard th { background: var(--bg-deep); font-size: 10px; color: var(--text-muted); }
+.bowling-scorecard .frame-rolls { display: flex; justify-content: center; gap: 2px; min-height: 18px; }
+.bowling-scorecard .roll-box {
+    width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; border-radius: 3px;
+}
+.bowling-scorecard .roll-box.strike { color: var(--error); }
+.bowling-scorecard .roll-box.spare { color: var(--accent); }
+.bowling-scorecard .frame-score { font-size: 14px; font-weight: 700; color: var(--text-primary); min-height: 20px; }
+.bowling-scorecard .frame-num { font-size: 9px; color: var(--text-muted); }
+.bowling-scorecard .total-cell { font-size: 16px; font-weight: 800; color: var(--accent); }
+.bowling-pin-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 6px; max-width: 260px; margin: 0 auto; padding: 8px 0;
+}
+.bowling-pin-btn {
+    min-height: 48px; border: none; border-radius: 8px;
+    background: var(--bg-surface); color: var(--text-primary);
+    font-size: 18px; font-weight: 700; cursor: pointer;
+    transition: transform 0.08s;
+}
+.bowling-pin-btn:active { transform: scale(0.92); }
+.bowling-pin-btn.strike-btn { background: var(--accent); color: #1A1A1A; grid-column: span 2; }
+.bowling-pin-btn.spare-btn { background: var(--accent-dim); color: var(--accent); grid-column: span 2; }
+.bowling-pin-btn.miss-btn { background: var(--bg-elevated); }
+
+/* Tennis score display */
+.tennis-score-grid {
+    display: grid; grid-template-columns: 1fr auto auto auto;
+    gap: 0; background: var(--bg-surface); border-radius: 10px; overflow: hidden;
+}
+.tennis-score-grid .cell {
+    padding: 8px 12px; display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--bg-elevated);
+    font-size: 14px;
+}
+.tennis-score-grid .cell.header { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.tennis-score-grid .cell.name { justify-content: flex-start; font-weight: 600; }
+.tennis-score-grid .cell.current { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+.tennis-score-grid .cell.game-score { font-size: 20px; font-weight: 800; min-width: 48px; }
+
+/* Footer */
+#footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 8px 16px; padding-bottom: calc(8px + var(--safe-bottom));
+    background: var(--bg-deep); border-top: 1px solid var(--bg-elevated);
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 99;
+}
+#footer .brand { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+#footer .brand span { color: var(--accent); }
+.footer-actions { display: flex; gap: 8px; }
+.footer-btn {
+    padding: 6px 12px; border: 1px solid var(--bg-elevated); border-radius: 6px;
+    background: transparent; color: var(--text-secondary); font-size: 12px;
+    cursor: pointer;
+}
+.footer-btn.danger { border-color: rgba(244,67,54,0.3); color: var(--error); }
+
+/* Undo button */
+#undoBtn {
+    position: fixed; bottom: calc(52px + var(--safe-bottom)); right: 16px;
+    padding: 8px 16px; border: none; border-radius: 20px;
+    background: var(--bg-elevated); color: var(--text-secondary);
+    font-size: 13px; cursor: pointer; z-index: 98;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.15s, opacity 0.15s;
+    display: none;
+}
+#undoBtn:active { transform: scale(0.94); }
+#undoBtn.visible { display: block; animation: slideUp 0.2s ease-out; }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Pickleball server badge */
+.server-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 11px; font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (min-width: 500px) {
+    #scoringPanel { max-width: 480px; margin: 0 auto; }
+}
+@media (max-height: 600px) {
+    .team-score { font-size: 36px; }
+    .score-btn { min-height: 44px; }
+}
+
+/* Haptic flash animation */
+.flash { animation: flash 0.15s ease-out; }
+@keyframes flash { 0% { filter: brightness(1.3); } 100% { filter: brightness(1); } }
+</style>
+</head>
+<body>
+
+<!-- Status Bar -->
+<div id="statusBar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Not connected</span>
+    <div id="recIndicator"><div class="rec-dot"></div>REC</div>
+</div>
+<div id="disconnectBanner">Connection lost. Reconnecting...</div>
+
+<!-- Join Screen -->
+<div id="joinScreen" class="screen active">
+    <div class="logo">Score<span>Frame</span></div>
+    <div class="subtitle">Web Scorer</div>
+    <input type="text" id="codeInput" maxlength="6" placeholder="CODE" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <button id="joinBtn" onclick="joinGame()">Join Game</button>
+    <div id="joinError"></div>
+    <div class="join-hint">
+        Enter the 6-character code from the camera phone<br>
+        or use a link: scoreframe.app/score?code=XXXXXX
+    </div>
+</div>
+
+<!-- Waiting Screen -->
+<div id="waitingScreen" class="screen">
+    <div class="spinner"></div>
+    <div id="waitingText">Connecting to game...</div>
+    <div id="waitingSport"></div>
+    <button id="cancelJoinBtn" onclick="cancelJoin()">Cancel</button>
+</div>
+
+<!-- Scoring Screen -->
+<div id="scoringScreen" class="screen">
+    <div id="sportHeader">
+        <span id="sportEmoji"></span>
+        <span id="sportLabel"></span>
+        <span id="eventLabel"></span>
+    </div>
+    <div id="scoreDisplay"></div>
+    <div id="scoringPanel"></div>
+</div>
+
+<!-- Undo Button -->
+<button id="undoBtn" onclick="performUndo()">Undo</button>
+
+<!-- Footer -->
+<div id="footer" style="display:none;">
+    <div class="brand">Score<span>Frame</span></div>
+    <div class="footer-actions">
+        <button class="footer-btn" onclick="showResetDialog()">Reset</button>
+        <button class="footer-btn danger" onclick="showEndDialog()">End Game</button>
+    </div>
+</div>
+
+<script type="module">
+// ── Firebase SDK (v9+ modular, from CDN) ──────────────────────────────
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, push, onValue, off, get, onDisconnect, serverTimestamp }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { getAuth, signInAnonymously }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+// ── Firebase Config (from google-services.json) ────────────────────────
+const firebaseConfig = {
+    apiKey: "AIzaSyBhqtlHshe3wEEPkJe7mVUIrZ1IJirullU",
+    authDomain: "scoreframe-deploy.firebaseapp.com",
+    databaseURL: "https://scoreframe-deploy-default-rtdb.firebaseio.com",
+    projectId: "scoreframe-deploy",
+    storageBucket: "scoreframe-deploy.firebasestorage.app",
+    messagingSenderId: "728886280072",
+    appId: "1:728886280072:android:0050478669b89fc76b043d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+// ── Global State ──────────────────────────────────────────────────────
+let currentCode = null;
+let currentSport = null;
+let currentState = null;
+let lastSeq = 0;
+let uid = null;
+let stateListener = null;
+let metaListener = null;
+let scorerListener = null;
+let undoStack = [];
+let connected = false;
+
+// ── Utility ───────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+    $('footer').style.display = (id === 'scoringScreen') ? 'flex' : 'none';
+}
+
+function vibrate(ms = 15) {
+    try { navigator.vibrate && navigator.vibrate(ms); } catch(e) {}
+}
+
+function sportEmoji(sport) {
+    const map = {
+        GENERIC: '\u{1F3AF}', VOLLEYBALL: '\u{1F3D0}', BOWLING: '\u{1F3B3}',
+        BASKETBALL: '\u{1F3C0}', SOCCER: '\u26BD', FOOTBALL: '\u{1F3C8}',
+        BASEBALL: '\u26BE', SOFTBALL: '\u{1F94E}', TENNIS: '\u{1F3BE}',
+        PICKLEBALL: '\u{1F3D3}', HOCKEY: '\u{1F3D2}', LACROSSE: '\u{1F94D}'
+    };
+    return map[sport] || '\u{1F3AF}';
+}
+
+function sportDisplayName(sport) {
+    const map = {
+        GENERIC: 'Generic', VOLLEYBALL: 'Volleyball', BOWLING: 'Bowling',
+        BASKETBALL: 'Basketball', SOCCER: 'Soccer', FOOTBALL: 'Football',
+        BASEBALL: 'Baseball', SOFTBALL: 'Softball', TENNIS: 'Tennis',
+        PICKLEBALL: 'Pickleball', HOCKEY: 'Hockey', LACROSSE: 'Lacrosse'
+    };
+    return map[sport] || sport;
+}
+
+// ── Deep clone helper ─────────────────────────────────────────────────
+function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+// ── Default state factories ───────────────────────────────────────────
+function defaultState(sport) {
+    switch(sport) {
+        case 'GENERIC': return {
+            homeName:'HOME', awayName:'AWAY', homeScore:0, awayScore:0,
+            currentPeriod:1, periodLabel:'PERIOD', homeColor:'#1565C0', awayColor:'#C62828', eventLabel:''
+        };
+        case 'VOLLEYBALL': return {
+            homeName:'HOME', awayName:'AWAY', homeColor:'#1565C0', awayColor:'#C62828',
+            homeScore:0, awayScore:0, homeSets:0, awaySets:0, currentSet:1,
+            serving:'HOME', matchFormat:3, setTargetScore:25, decidingSetTarget:15,
+            startingScore:0, homeScoreBySet:[], awayScoreBySet:[], matchComplete:false, eventLabel:'',
+            homeStats:{kills:0,aces:0,assists:0,errors:0,missedServes:0},
+            awayStats:{kills:0,aces:0,assists:0,errors:0,missedServes:0}
+        };
+        case 'BASKETBALL': return {
+            homeName:'HOME', awayName:'AWAY', homeColor:'#1565C0', awayColor:'#C62828',
+            homeScore:0, awayScore:0, useQuarters:true, currentPeriod:1,
+            homeScoreByPeriod:[0,0,0,0], awayScoreByPeriod:[0,0,0,0],
+            homeFouls:0, awayFouls:0, homeTimeouts:5, awayTimeouts:5,
+            homeBonus:false, awayBonus:false,
+            homeFoulsByPeriod:[0,0,0,0], awayFoulsByPeriod:[0,0,0,0], eventLabel:''
+        };
+        case 'SOCCER': return {
+            homeName:'HOME', awayName:'AWAY', homeColor:'#1565C0', awayColor:'#C62828',
+            homeScore:0, awayScore:0, currentHalf:1,
+            homeYellowCards:0, awayYellowCards:0, homeRedCards:0, awayRedCards:0,
+            homeCorners:0, awayCorners:0, homeShotsOnGoal:0, awayShotsOnGoal:0,
+            timeMinutes:0, inPenaltyShootout:false, homePossession:50,
+            homeFouls:0, awayFouls:0, homeOffsides:0, awayOffsides:0,
+            homeSaves:0, awaySaves:0, eventLabel:'', scoringMode:'simple',
+            halfLengthMinutes:45, timerDisplaySeconds:0, timerRunning:false,
+            isHalftime:false, isStoppageTime:false, stoppageStartSeconds:0, showStatsOnScoreboard:false
+        };
+        case 'FOOTBALL': return {
+            homeName:'HOME', awayName:'AWAY', homeColor:'#1565C0', awayColor:'#C62828',
+            homeScore:0, awayScore:0, currentQuarter:1, down:1, distance:10,
+            possession:'HOME', homeTimeouts:3, awayTimeouts:3,
+            homeTouchdowns:0, awayTouchdowns:0, homeFieldGoals:0, awayFieldGoals:0,
+            homeExtraPoints:0, awayExtraPoints:0, homeTwoPoints:0, awayTwoPoints:0,
+            homeSafeties:0, awaySafeties:0, yardLine:50,
+            homeScoreByQuarter:[0,0,0,0], awayScoreByQuarter:[0,0,0,0], eventLabel:''
+        };
+        case 'BASEBALL': case 'SOFTBALL': return {
+            homeName:'HOME', awayName:'AWAY', homeColor:'#1565C0', awayColor:'#C62828',
+            homeScore:0, awayScore:0, currentInning:1, isTopOfInning:true,
+            outs:0, balls:0, strikes:0,
+            runnerOnFirst:false, runnerOnSecond:false, runnerOnThird:false,
+            homeScoreByInning:[-1,-1,-1,-1,-1,-1,-1,-1,-1],
+            awayScoreByInning:[-1,-1,-1,-1,-1,-1,-1,-1,-1],
+            homeHits:0, awayHits:0, homeErrors:0, awayErrors:0,
+            isSoftball: sport === 'SOFTBALL', eventLabel:''
+        };
+        case 'BOWLING': return {
+            playerName:'PLAYER 1', currentGame:1, totalScore:0, seriesTotal:0,
+            frames: Array.from({length:10}, () => ({roll1:'',roll2:'',roll3:'',score:0,isSplit:false})),
+            previousGames:[], eventLabel:''
+        };
+        case 'TENNIS': return {
+            player1Name:'PLAYER 1', player2Name:'PLAYER 2',
+            player1Color:'#1565C0', player2Color:'#C62828',
+            player1GameScore:0, player2GameScore:0,
+            player1Sets:[0], player2Sets:[0], currentSet:1,
+            player1SetsWon:0, player2SetsWon:0, bestOf:3, tiebreakAt:6,
+            isTiebreak:false, tiebreakScore1:0, tiebreakScore2:0,
+            isPlayer1Serving:true, matchComplete:false, eventLabel:''
+        };
+        case 'PICKLEBALL': return {
+            team1Name:'TEAM 1', team2Name:'TEAM 2',
+            team1Color:'#1565C0', team2Color:'#C62828',
+            team1Score:0, team2Score:0, servingTeam:1, serverNumber:2,
+            scoreToWin:11, winBy:2, currentGame:1, bestOf:3,
+            team1GamesWon:0, team2GamesWon:0, isSingles:false, matchComplete:false, eventLabel:''
+        };
+        case 'HOCKEY': return {
+            homeName:'HOME', awayName:'AWAY', homeColor:'#1565C0', awayColor:'#C62828',
+            homeScore:0, awayScore:0, currentPeriod:1,
+            homeShotsOnGoal:0, awayShotsOnGoal:0,
+            homePenaltyMinutes:0, awayPenaltyMinutes:0,
+            homePowerPlay:false, awayPowerPlay:false,
+            homeScoreByPeriod:[0,0,0], awayScoreByPeriod:[0,0,0], eventLabel:''
+        };
+        case 'LACROSSE': return {
+            homeName:'HOME', awayName:'AWAY', homeColor:'#1565C0', awayColor:'#C62828',
+            homeScore:0, awayScore:0, currentQuarter:1,
+            homeShotsOnGoal:0, awayShotsOnGoal:0,
+            homeGroundBalls:0, awayGroundBalls:0,
+            homeFaceoffsWon:0, awayFaceoffsWon:0,
+            homePenalties:0, awayPenalties:0,
+            homeScoreByQuarter:[0,0,0,0], awayScoreByQuarter:[0,0,0,0], eventLabel:''
+        };
+        default: return {};
+    }
+}
+
+// ── Send Command ──────────────────────────────────────────────────────
+function sendCommand(updatedState) {
+    if (!currentCode || !currentSport) return;
+    lastSeq++;
+    const cmd = {
+        type: 'FULL_STATE_SYNC',
+        sport: currentSport,
+        state: updatedState,
+        seq: lastSeq,
+        sentAt: Date.now()
+    };
+    push(ref(db, `sessions/${currentCode}/commands`), cmd);
+}
+
+function updateAndSend(mutator) {
+    if (!currentState) return;
+    const prev = clone(currentState);
+    undoStack.push(prev);
+    if (undoStack.length > 20) undoStack.shift();
+    showUndoBtn();
+    const updated = clone(currentState);
+    mutator(updated);
+    currentState = updated;
+    sendCommand(updated);
+    renderScoring();
+    vibrate();
+}
+
+function showUndoBtn() {
+    $('undoBtn').classList.add('visible');
+    clearTimeout(window._undoTimer);
+    window._undoTimer = setTimeout(() => $('undoBtn').classList.remove('visible'), 5000);
+}
+
+window.performUndo = function() {
+    if (undoStack.length === 0) return;
+    currentState = undoStack.pop();
+    sendCommand(currentState);
+    renderScoring();
+    vibrate(30);
+    if (undoStack.length === 0) $('undoBtn').classList.remove('visible');
+};
+
+// ── Auth ──────────────────────────────────────────────────────────────
+async function ensureAuth() {
+    if (uid) return;
+    const cred = await signInAnonymously(auth);
+    uid = cred.user.uid;
+}
+
+// ── Join Game ─────────────────────────────────────────────────────────
+window.joinGame = async function() {
+    const code = $('codeInput').value.trim().toUpperCase();
+    if (code.length < 4) { $('joinError').textContent = 'Code must be at least 4 characters'; return; }
+    $('joinBtn').disabled = true;
+    $('joinError').textContent = '';
+    try {
+        await ensureAuth();
+        // Check if session exists
+        const snap = await get(ref(db, `sessions/${code}/meta`));
+        if (!snap.exists()) {
+            $('joinError').textContent = 'Game not found. Check the code and try again.';
+            $('joinBtn').disabled = false;
+            return;
+        }
+        const meta = snap.val();
+        currentCode = code;
+        currentSport = meta.sport;
+
+        // Write scorer request
+        await set(ref(db, `sessions/${code}/scorerRequest`), {
+            uid: uid,
+            displayName: 'Web Scorer',
+            status: 'pending',
+            requestedAt: Date.now()
+        });
+
+        // Show waiting screen
+        showScreen('waitingScreen');
+        $('waitingText').textContent = 'Waiting for approval...';
+        $('waitingSport').textContent = sportEmoji(currentSport) + ' ' + sportDisplayName(currentSport);
+
+        // Listen for approval
+        listenForApproval(code);
+
+        // Also start listening for state (some setups may auto-approve)
+        listenForState(code);
+
+    } catch(e) {
+        console.error('Join error:', e);
+        $('joinError').textContent = 'Connection error. Please try again.';
+        $('joinBtn').disabled = false;
+    }
+};
+
+function listenForApproval(code) {
+    scorerListener = onValue(ref(db, `sessions/${code}/scorerRequest/status`), (snap) => {
+        const status = snap.val();
+        if (status === 'approved') {
+            enterScoringMode();
+        } else if (status === 'denied') {
+            $('waitingText').textContent = 'Request denied by camera phone.';
+        }
+    });
+}
+
+function listenForState(code) {
+    stateListener = onValue(ref(db, `sessions/${code}/state`), (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.val();
+        if (data.sport) currentSport = data.sport;
+        if (data.stateJson) {
+            const st = typeof data.stateJson === 'string' ? JSON.parse(data.stateJson) : data.stateJson;
+            currentState = st;
+            if (data.seq) lastSeq = Math.max(lastSeq, data.seq);
+        }
+        if (data.isRecording !== undefined) {
+            $('recIndicator').style.display = data.isRecording ? 'flex' : 'none';
+        }
+        // If we get state, assume we're approved (for auto-approve flows)
+        if (currentState && !document.querySelector('#scoringScreen.active')) {
+            enterScoringMode();
+        }
+        if (document.querySelector('#scoringScreen.active')) {
+            renderScoring();
+        }
+    });
+
+    // Also listen for meta changes (sport switch, game end)
+    metaListener = onValue(ref(db, `sessions/${code}/meta`), (snap) => {
+        if (!snap.exists()) return;
+        const meta = snap.val();
+        if (meta.sport && meta.sport !== currentSport) {
+            currentSport = meta.sport;
+            currentState = null; // Will be set by state listener
+        }
+        if (meta.status === 'ended') {
+            alert('Game has ended.');
+            location.reload();
+        }
+    });
+
+    // Connection state
+    onValue(ref(db, '.info/connected'), (snap) => {
+        connected = snap.val() === true;
+        updateConnectionStatus();
+    });
+}
+
+function enterScoringMode() {
+    showScreen('scoringScreen');
+    $('sportEmoji').textContent = sportEmoji(currentSport);
+    $('sportLabel').textContent = sportDisplayName(currentSport);
+    if (!currentState) currentState = defaultState(currentSport);
+    renderScoring();
+    updateConnectionStatus();
+}
+
+function updateConnectionStatus() {
+    const dot = $('statusDot');
+    const text = $('statusText');
+    const banner = $('disconnectBanner');
+    if (connected) {
+        dot.className = 'status-dot';
+        text.textContent = 'Connected';
+        banner.style.display = 'none';
+    } else {
+        dot.className = 'status-dot disconnected';
+        text.textContent = 'Reconnecting...';
+        banner.style.display = 'block';
+    }
+}
+
+window.cancelJoin = function() {
+    if (stateListener) off(ref(db, `sessions/${currentCode}/state`));
+    if (metaListener) off(ref(db, `sessions/${currentCode}/meta`));
+    if (scorerListener) off(ref(db, `sessions/${currentCode}/scorerRequest/status`));
+    currentCode = null; currentSport = null; currentState = null;
+    showScreen('joinScreen');
+    $('joinBtn').disabled = false;
+};
+
+// ── Reset / End ───────────────────────────────────────────────────────
+window.showResetDialog = function() {
+    if (confirm('Reset all scores to zero?')) {
+        currentState = defaultState(currentSport);
+        // Preserve team names/colors from current
+        sendCommand(currentState);
+        renderScoring();
+    }
+};
+
+window.showEndDialog = function() {
+    if (confirm('End this game?')) {
+        push(ref(db, `sessions/${currentCode}/commands`), {
+            type: 'GAME_LIFECYCLE', action: 'END', sentAt: Date.now()
+        });
+    }
+};
+
+// ── Render Routing ────────────────────────────────────────────────────
+function renderScoring() {
+    if (!currentState || !currentSport) return;
+    $('eventLabel').textContent = currentState.eventLabel || '';
+    switch(currentSport) {
+        case 'GENERIC': renderGeneric(); break;
+        case 'BASKETBALL': renderBasketball(); break;
+        case 'FOOTBALL': renderFootball(); break;
+        case 'VOLLEYBALL': renderVolleyball(); break;
+        case 'SOCCER': renderSoccer(); break;
+        case 'BOWLING': renderBowling(); break;
+        case 'BASEBALL': case 'SOFTBALL': renderBaseball(); break;
+        case 'TENNIS': renderTennis(); break;
+        case 'PICKLEBALL': renderPickleball(); break;
+        case 'HOCKEY': renderHockey(); break;
+        case 'LACROSSE': renderLacrosse(); break;
+    }
+}
+
+// ── Helper: Team Score Display ────────────────────────────────────────
+function renderTeamScoreDisplay(s, periodLabel, periodValue, homeDetail, awayDetail) {
+    const hc = s.homeColor || '#1565C0';
+    const ac = s.awayColor || '#C62828';
+    $('scoreDisplay').innerHTML = `
+        <div class="score-display">
+            <div class="team-score-block" style="background:${hc}15;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${hc};"></div>
+                <div class="team-name">${esc(s.homeName || 'HOME')}</div>
+                <div class="team-score" style="color:${hc}">${s.homeScore}</div>
+                ${homeDetail ? `<div class="team-detail">${homeDetail}</div>` : ''}
+            </div>
+            <div class="score-divider">
+                <div class="period-label">${periodLabel}</div>
+                <div class="period-value">${periodValue}</div>
+            </div>
+            <div class="team-score-block" style="background:${ac}15;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${ac};"></div>
+                <div class="team-name">${esc(s.awayName || 'AWAY')}</div>
+                <div class="team-score" style="color:${ac}">${s.awayScore}</div>
+                ${awayDetail ? `<div class="team-detail">${awayDetail}</div>` : ''}
+            </div>
+        </div>`;
+}
+
+function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+// ══════════════════════════════════════════════════════════════════════
+// ── GENERIC ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderGeneric() {
+    const s = currentState;
+    renderTeamScoreDisplay(s, s.periodLabel || 'PERIOD', s.currentPeriod);
+    $('scoringPanel').innerHTML = `
+        <div class="section-label">Score</div>
+        <div class="btn-row">
+            <button class="score-btn home-btn" style="background:${s.homeColor||'#1565C0'}" onclick="genScore('home',1)">
+                +1<span class="btn-label">${esc(s.homeName||'HOME')}</span>
+            </button>
+            <button class="score-btn away-btn" style="background:${s.awayColor||'#C62828'}" onclick="genScore('away',1)">
+                +1<span class="btn-label">${esc(s.awayName||'AWAY')}</span>
+            </button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="genScore('home',-1)">-1 ${esc(s.homeName||'HOME')}</button>
+            <button class="score-btn neutral-btn small" onclick="genScore('away',-1)">-1 ${esc(s.awayName||'AWAY')}</button>
+        </div>
+        <div class="section-label">${esc(s.periodLabel || 'Period')}</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="genPeriod(-1)">-</button>
+            <button class="score-btn neutral-btn small" onclick="genPeriod(1)">+</button>
+        </div>`;
+}
+window.genScore = (team, pts) => updateAndSend(s => {
+    if (team === 'home') s.homeScore = Math.max(0, s.homeScore + pts);
+    else s.awayScore = Math.max(0, s.awayScore + pts);
+});
+window.genPeriod = (d) => updateAndSend(s => { s.currentPeriod = Math.max(1, s.currentPeriod + d); });
+
+// ══════════════════════════════════════════════════════════════════════
+// ── BASKETBALL ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderBasketball() {
+    const s = currentState;
+    const pLabel = s.useQuarters ? 'QTR' : 'HALF';
+    renderTeamScoreDisplay(s, pLabel, s.currentPeriod,
+        `Fouls: ${s.homeFouls}`, `Fouls: ${s.awayFouls}`);
+    const hc = s.homeColor||'#1565C0', ac = s.awayColor||'#C62828';
+    $('scoringPanel').innerHTML = `
+        <div class="section-label">${esc(s.homeName||'HOME')} Scoring</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${hc}" onclick="bbScore('home',1)">+1<span class="btn-label">FT</span></button>
+            <button class="score-btn" style="background:${hc}" onclick="bbScore('home',2)">+2</button>
+            <button class="score-btn" style="background:${hc}" onclick="bbScore('home',3)">+3</button>
+        </div>
+        <div class="section-label">${esc(s.awayName||'AWAY')} Scoring</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${ac}" onclick="bbScore('away',1)">+1<span class="btn-label">FT</span></button>
+            <button class="score-btn" style="background:${ac}" onclick="bbScore('away',2)">+2</button>
+            <button class="score-btn" style="background:${ac}" onclick="bbScore('away',3)">+3</button>
+        </div>
+        <div class="section-label">Fouls</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="bbFoul('home')">Foul ${esc(s.homeName||'HOME')}</button>
+            <button class="score-btn neutral-btn small" onclick="bbFoul('away')">Foul ${esc(s.awayName||'AWAY')}</button>
+        </div>
+        <div class="section-label">${pLabel}</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="bbPeriod(-1)">-</button>
+            <button class="score-btn accent-btn small">${s.currentPeriod}</button>
+            <button class="score-btn neutral-btn small" onclick="bbPeriod(1)">+</button>
+        </div>`;
+}
+window.bbScore = (team, pts) => updateAndSend(s => {
+    if (team === 'home') { s.homeScore += pts; s.homeScoreByPeriod[s.currentPeriod-1] = (s.homeScoreByPeriod[s.currentPeriod-1]||0) + pts; }
+    else { s.awayScore += pts; s.awayScoreByPeriod[s.currentPeriod-1] = (s.awayScoreByPeriod[s.currentPeriod-1]||0) + pts; }
+});
+window.bbFoul = (team) => updateAndSend(s => {
+    if (team === 'home') { s.homeFouls++; s.homeFoulsByPeriod[s.currentPeriod-1] = (s.homeFoulsByPeriod[s.currentPeriod-1]||0)+1; }
+    else { s.awayFouls++; s.awayFoulsByPeriod[s.currentPeriod-1] = (s.awayFoulsByPeriod[s.currentPeriod-1]||0)+1; }
+});
+window.bbPeriod = (d) => updateAndSend(s => { s.currentPeriod = Math.max(1, s.currentPeriod + d); });
+
+// ══════════════════════════════════════════════════════════════════════
+// ── FOOTBALL ─────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderFootball() {
+    const s = currentState;
+    const poss = s.possession || 'HOME';
+    const possName = poss === 'HOME' ? (s.homeName||'HOME') : (s.awayName||'AWAY');
+    renderTeamScoreDisplay(s, 'QTR', s.currentQuarter,
+        poss==='HOME' ? '\u{1F3C8} Possession' : '',
+        poss==='AWAY' ? '\u{1F3C8} Possession' : '');
+    const hc = s.homeColor||'#1565C0', ac = s.awayColor||'#C62828';
+    const possColor = poss === 'HOME' ? hc : ac;
+    $('scoringPanel').innerHTML = `
+        <div style="text-align:center;padding:4px 0;font-size:14px;font-weight:600;color:${possColor};">
+            ${ordinal(s.down)} & ${s.distance} at ${s.yardLine} yd line
+        </div>
+        <div class="section-label">${esc(s.homeName||'HOME')} Scoring</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${hc}" onclick="fbScore('home','TD')">TD<span class="btn-label">+6</span></button>
+            <button class="score-btn" style="background:${hc}" onclick="fbScore('home','FG')">FG<span class="btn-label">+3</span></button>
+            <button class="score-btn" style="background:${hc}" onclick="fbScore('home','XP')">XP<span class="btn-label">+1</span></button>
+            <button class="score-btn" style="background:${hc}" onclick="fbScore('home','2PT')">2PT<span class="btn-label">+2</span></button>
+        </div>
+        <div class="section-label">${esc(s.awayName||'AWAY')} Scoring</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${ac}" onclick="fbScore('away','TD')">TD<span class="btn-label">+6</span></button>
+            <button class="score-btn" style="background:${ac}" onclick="fbScore('away','FG')">FG<span class="btn-label">+3</span></button>
+            <button class="score-btn" style="background:${ac}" onclick="fbScore('away','XP')">XP<span class="btn-label">+1</span></button>
+            <button class="score-btn" style="background:${ac}" onclick="fbScore('away','2PT')">2PT<span class="btn-label">+2</span></button>
+        </div>
+        <div class="section-label">Safety</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="fbSafety('home')">Safety ${esc(s.homeName||'HOME')} +2</button>
+            <button class="score-btn neutral-btn small" onclick="fbSafety('away')">Safety ${esc(s.awayName||'AWAY')} +2</button>
+        </div>
+        <div class="section-label">Down & Distance</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="fbDown(-1)">Down -</button>
+            <button class="score-btn accent-btn small">${ordinal(s.down)}</button>
+            <button class="score-btn neutral-btn small" onclick="fbDown(1)">Down +</button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="fbDist(-1)">Dist -</button>
+            <button class="score-btn accent-btn small">${s.distance}</button>
+            <button class="score-btn neutral-btn small" onclick="fbDist(1)">Dist +</button>
+        </div>
+        <div class="section-label">Possession & Quarter</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="fbPoss()">\u{1F3C8} Flip Possession</button>
+            <button class="score-btn neutral-btn small" onclick="fbQtr(-1)">Q-</button>
+            <button class="score-btn accent-btn small">Q${s.currentQuarter}</button>
+            <button class="score-btn neutral-btn small" onclick="fbQtr(1)">Q+</button>
+        </div>`;
+}
+function ordinal(n) { const s = ['th','st','nd','rd']; const v = n%100; return n + (s[(v-20)%10]||s[v]||s[0]); }
+window.fbScore = (team, type) => updateAndSend(s => {
+    const pts = {TD:6,FG:3,XP:1,'2PT':2}[type]||0;
+    if (team === 'home') {
+        s.homeScore += pts;
+        s.homeScoreByQuarter[s.currentQuarter-1] = (s.homeScoreByQuarter[s.currentQuarter-1]||0) + pts;
+        if (type==='TD') s.homeTouchdowns++;
+        if (type==='FG') s.homeFieldGoals++;
+        if (type==='XP') s.homeExtraPoints++;
+        if (type==='2PT') s.homeTwoPoints++;
+    } else {
+        s.awayScore += pts;
+        s.awayScoreByQuarter[s.currentQuarter-1] = (s.awayScoreByQuarter[s.currentQuarter-1]||0) + pts;
+        if (type==='TD') s.awayTouchdowns++;
+        if (type==='FG') s.awayFieldGoals++;
+        if (type==='XP') s.awayExtraPoints++;
+        if (type==='2PT') s.awayTwoPoints++;
+    }
+});
+window.fbSafety = (team) => updateAndSend(s => {
+    if (team==='home') { s.homeScore+=2; s.homeSafeties++; s.homeScoreByQuarter[s.currentQuarter-1]=(s.homeScoreByQuarter[s.currentQuarter-1]||0)+2; }
+    else { s.awayScore+=2; s.awaySafeties++; s.awayScoreByQuarter[s.currentQuarter-1]=(s.awayScoreByQuarter[s.currentQuarter-1]||0)+2; }
+});
+window.fbDown = d => updateAndSend(s => { s.down = Math.max(1, Math.min(4, s.down+d)); });
+window.fbDist = d => updateAndSend(s => { s.distance = Math.max(1, s.distance+d); });
+window.fbPoss = () => updateAndSend(s => { s.possession = s.possession==='HOME' ? 'AWAY' : 'HOME'; });
+window.fbQtr = d => updateAndSend(s => { s.currentQuarter = Math.max(1, s.currentQuarter+d); });
+
+// ══════════════════════════════════════════════════════════════════════
+// ── VOLLEYBALL ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderVolleyball() {
+    const s = currentState;
+    const servingHome = s.serving === 'HOME';
+    const setInfo = `Set ${s.currentSet} | Bo${s.matchFormat}`;
+    renderTeamScoreDisplay(s, 'SET', `${s.homeSets}-${s.awaySets}`,
+        servingHome ? '\u{1F3D0} Serving' : '',
+        !servingHome ? '\u{1F3D0} Serving' : '');
+    const hc = s.homeColor||'#1565C0', ac = s.awayColor||'#C62828';
+    let setsHtml = '';
+    if (s.homeScoreBySet && s.homeScoreBySet.length > 0) {
+        setsHtml = '<div class="section-label">Set History</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
+        for (let i = 0; i < s.homeScoreBySet.length; i++) {
+            setsHtml += `<div style="background:var(--bg-surface);padding:4px 10px;border-radius:6px;font-size:12px;">
+                S${i+1}: ${s.homeScoreBySet[i]}-${s.awayScoreBySet[i]}</div>`;
+        }
+        setsHtml += '</div>';
+    }
+    $('scoringPanel').innerHTML = `
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);">${setInfo}${s.matchComplete ? ' | FINAL' : ''}</div>
+        <div class="section-label">Score</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${hc};font-size:28px;" onclick="vbScore('home')">
+                +1<span class="btn-label">${esc(s.homeName||'HOME')}</span>
+            </button>
+            <button class="score-btn" style="background:${ac};font-size:28px;" onclick="vbScore('away')">
+                +1<span class="btn-label">${esc(s.awayName||'AWAY')}</span>
+            </button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="vbScoreMinus('home')">-1 ${esc(s.homeName||'HOME')}</button>
+            <button class="score-btn neutral-btn small" onclick="vbScoreMinus('away')">-1 ${esc(s.awayName||'AWAY')}</button>
+        </div>
+        <div class="section-label">Serve</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small ${servingHome?'':'accent-btn'}" onclick="vbServe('HOME')" style="${servingHome?'border:2px solid var(--accent);':''}">
+                ${servingHome?'\u{1F3D0} ':''} ${esc(s.homeName||'HOME')}
+            </button>
+            <button class="score-btn neutral-btn small ${!servingHome?'':'accent-btn'}" onclick="vbServe('AWAY')" style="${!servingHome?'border:2px solid var(--accent);':''}">
+                ${!servingHome?'\u{1F3D0} ':''} ${esc(s.awayName||'AWAY')}
+            </button>
+        </div>
+        ${setsHtml}`;
+}
+window.vbScore = (team) => updateAndSend(s => {
+    if (s.matchComplete) return;
+    if (team==='home') s.homeScore++; else s.awayScore++;
+    // Auto-switch serve to scoring team
+    s.serving = team.toUpperCase();
+});
+window.vbScoreMinus = (team) => updateAndSend(s => {
+    if (team==='home') s.homeScore = Math.max(0, s.homeScore-1);
+    else s.awayScore = Math.max(0, s.awayScore-1);
+});
+window.vbServe = (team) => updateAndSend(s => { s.serving = team; });
+
+// ══════════════════════════════════════════════════════════════════════
+// ── SOCCER ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderSoccer() {
+    const s = currentState;
+    const halfLabel = s.currentHalf <= 2 ? `H${s.currentHalf}` : `ET${s.currentHalf-2}`;
+    renderTeamScoreDisplay(s, 'HALF', halfLabel);
+    const hc = s.homeColor||'#1565C0', ac = s.awayColor||'#C62828';
+    $('scoringPanel').innerHTML = `
+        <div class="section-label">Goals</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${hc};font-size:24px;" onclick="soccerGoal('home')">
+                \u26BD +1<span class="btn-label">${esc(s.homeName||'HOME')}</span>
+            </button>
+            <button class="score-btn" style="background:${ac};font-size:24px;" onclick="soccerGoal('away')">
+                \u26BD +1<span class="btn-label">${esc(s.awayName||'AWAY')}</span>
+            </button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="soccerGoal('home',-1)">-1 ${esc(s.homeName||'HOME')}</button>
+            <button class="score-btn neutral-btn small" onclick="soccerGoal('away',-1)">-1 ${esc(s.awayName||'AWAY')}</button>
+        </div>
+        <div class="section-label">Half</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="soccerHalf(-1)">-</button>
+            <button class="score-btn accent-btn small">${halfLabel}</button>
+            <button class="score-btn neutral-btn small" onclick="soccerHalf(1)">+</button>
+        </div>
+        <div class="section-label">Cards</div>
+        <div class="btn-row">
+            <button class="score-btn small" style="background:#E8B830;color:#1A1A1A;" onclick="soccerCard('home','yellow')">
+                \u{1F7E8} ${s.homeYellowCards}
+            </button>
+            <button class="score-btn small" style="background:#C62828;" onclick="soccerCard('home','red')">
+                \u{1F7E5} ${s.homeRedCards}
+            </button>
+            <button class="score-btn small" style="background:#E8B830;color:#1A1A1A;" onclick="soccerCard('away','yellow')">
+                \u{1F7E8} ${s.awayYellowCards}
+            </button>
+            <button class="score-btn small" style="background:#C62828;" onclick="soccerCard('away','red')">
+                \u{1F7E5} ${s.awayRedCards}
+            </button>
+        </div>`;
+}
+window.soccerGoal = (team, d=1) => updateAndSend(s => {
+    if (team==='home') s.homeScore = Math.max(0, s.homeScore+d);
+    else s.awayScore = Math.max(0, s.awayScore+d);
+});
+window.soccerHalf = d => updateAndSend(s => { s.currentHalf = Math.max(1, s.currentHalf+d); });
+window.soccerCard = (team, color) => updateAndSend(s => {
+    if (team==='home') { if(color==='yellow') s.homeYellowCards++; else s.homeRedCards++; }
+    else { if(color==='yellow') s.awayYellowCards++; else s.awayRedCards++; }
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// ── BOWLING ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderBowling() {
+    const s = currentState;
+    // Find current frame/roll
+    let curFrame = -1, curRoll = 0;
+    const frames = s.frames || [];
+    for (let i = 0; i < 10; i++) {
+        const f = frames[i] || {roll1:'',roll2:'',roll3:''};
+        if (i < 9) {
+            if (f.roll1 === '') { curFrame = i; curRoll = 1; break; }
+            if (f.roll1 !== 'X' && f.roll2 === '') { curFrame = i; curRoll = 2; break; }
+        } else {
+            if (f.roll1 === '') { curFrame = 9; curRoll = 1; break; }
+            if (f.roll2 === '') { curFrame = 9; curRoll = 2; break; }
+            if ((f.roll1 === 'X' || f.roll2 === '/') && f.roll3 === '') { curFrame = 9; curRoll = 3; break; }
+        }
+    }
+    const gameOver = curFrame === -1;
+
+    // Scorecard
+    let cardHtml = '<table><tr>';
+    for (let i = 0; i < 10; i++) cardHtml += `<th>${i+1}</th>`;
+    cardHtml += '<th>TOT</th></tr><tr>';
+    for (let i = 0; i < 10; i++) {
+        const f = frames[i] || {roll1:'',roll2:'',roll3:'',score:0};
+        const r1cls = f.roll1 === 'X' ? ' strike' : '';
+        const r2cls = f.roll2 === '/' ? ' spare' : (f.roll2 === 'X' ? ' strike' : '');
+        const r3cls = f.roll3 === 'X' ? ' strike' : (f.roll3 === '/' ? ' spare' : '');
+        const hi = (i === curFrame) ? 'background:var(--accent-dim);' : '';
+        if (i < 9) {
+            cardHtml += `<td style="${hi}"><div class="frame-rolls">
+                <span class="roll-box${r1cls}">${f.roll1}</span>
+                <span class="roll-box${r2cls}">${f.roll2}</span>
+            </div><div class="frame-score">${f.score||''}</div></td>`;
+        } else {
+            cardHtml += `<td style="${hi}"><div class="frame-rolls">
+                <span class="roll-box${r1cls}">${f.roll1}</span>
+                <span class="roll-box${r2cls}">${f.roll2}</span>
+                <span class="roll-box${r3cls}">${f.roll3}</span>
+            </div><div class="frame-score">${f.score||''}</div></td>`;
+        }
+    }
+    const total = s.totalScore || (frames[9] && frames[9].score ? frames[9].score : 0);
+    cardHtml += `<td class="total-cell">${total}</td></tr></table>`;
+
+    // Valid pins
+    const validOptions = gameOver ? [] : getValidOptions(curFrame, curRoll, frames);
+
+    // Score display
+    $('scoreDisplay').innerHTML = `
+        <div class="score-display" style="flex-direction:column;align-items:center;padding:8px 16px;">
+            <div style="font-size:13px;color:var(--text-secondary);">${esc(s.playerName||'PLAYER')} | Game ${s.currentGame}</div>
+            <div style="font-size:42px;font-weight:800;color:var(--accent);">${total}</div>
+            ${s.seriesTotal ? `<div style="font-size:12px;color:var(--text-muted);">Series: ${s.seriesTotal + total}</div>` : ''}
+        </div>`;
+
+    let pinsHtml = '';
+    if (!gameOver) {
+        pinsHtml = '<div class="section-label">Frame ' + (curFrame+1) + ' | Roll ' + curRoll + '</div><div class="bowling-pin-grid">';
+        for (const opt of validOptions) {
+            let cls = '', label = opt;
+            if (opt === 'X') { cls = 'strike-btn'; label = 'X Strike'; }
+            else if (opt === '/') { cls = 'spare-btn'; label = '/ Spare'; }
+            else if (opt === '-') { cls = 'miss-btn'; label = '- Miss'; }
+            else if (opt === 'F') { cls = 'miss-btn'; label = 'F Foul'; }
+            pinsHtml += `<button class="bowling-pin-btn ${cls}" onclick="bowlRoll('${opt}')">${label}</button>`;
+        }
+        pinsHtml += '</div>';
+    } else {
+        pinsHtml = '<div style="text-align:center;padding:16px;font-size:16px;font-weight:600;color:var(--accent);">Game Complete!</div>';
+    }
+
+    $('scoringPanel').innerHTML = `
+        <div class="bowling-scorecard">${cardHtml}</div>
+        ${pinsHtml}`;
+}
+
+function getValidOptions(frameIndex, rollNum, frames) {
+    const f = frames[frameIndex] || {roll1:'',roll2:'',roll3:''};
+    if (frameIndex < 9) {
+        if (rollNum === 1) return ['0','1','2','3','4','5','6','7','8','9','X','-','F'];
+        if (rollNum === 2) {
+            if (f.roll1 === 'X') return [];
+            const v = rollVal(f.roll1);
+            const remaining = 10 - v;
+            const opts = ['-','F'];
+            if (remaining > 0) {
+                opts.push('/');
+                for (let i = 1; i < remaining; i++) opts.push(String(i));
+            }
+            return opts;
+        }
+        return [];
+    }
+    // 10th frame
+    if (rollNum === 1) return ['0','1','2','3','4','5','6','7','8','9','X','-','F'];
+    if (rollNum === 2) {
+        if (f.roll1 === 'X') return ['0','1','2','3','4','5','6','7','8','9','X','-','F'];
+        const v = rollVal(f.roll1);
+        const remaining = 10 - v;
+        const opts = ['-','F'];
+        if (remaining > 0) { opts.push('/'); for (let i = 1; i < remaining; i++) opts.push(String(i)); }
+        return opts;
+    }
+    if (rollNum === 3) {
+        if (f.roll1 !== 'X' && f.roll2 !== '/') return [];
+        if (f.roll2 === '/') return ['0','1','2','3','4','5','6','7','8','9','X','-','F'];
+        if (f.roll1 === 'X' && f.roll2 === 'X') return ['0','1','2','3','4','5','6','7','8','9','X','-','F'];
+        if (f.roll1 === 'X') {
+            const v2 = rollVal(f.roll2);
+            if (f.roll2 === 'F' || f.roll2 === '-') {
+                const opts = ['-','F','/'];
+                for (let i = 1; i < 10; i++) opts.push(String(i));
+                return opts;
+            }
+            const remaining = 10 - v2;
+            const opts = ['-','F'];
+            if (remaining > 0) { opts.push('/'); for (let i = 1; i < remaining; i++) opts.push(String(i)); }
+            return opts;
+        }
+        return ['0','1','2','3','4','5','6','7','8','9','X','-','F'];
+    }
+    return [];
+}
+
+function rollVal(r) {
+    if (!r || r === '-' || r === 'F') return 0;
+    if (r === 'X') return 10;
+    return parseInt(r) || 0;
+}
+
+// Bowling scorer (JS port of BowlingScorer.kt)
+function calculateBowlingScores(frames) {
+    const f = frames.map(x => ({...x}));
+    for (let i = 0; i < 10; i++) {
+        if (!canScoreFrame(i, f)) continue;
+        let frameScore;
+        if (i < 9) frameScore = calcRegularFrame(i, f);
+        else frameScore = calcTenthFrame(f[9]);
+        const prev = i > 0 ? f[i-1].score : 0;
+        f[i].score = prev + frameScore;
+    }
+    return f;
+}
+function canScoreFrame(i, f) {
+    const fr = f[i];
+    if (i === 9) return fr.roll1 !== '' && ((!isX(fr.roll1) && fr.roll2 !== '/') || fr.roll3 !== '');
+    if (isX(fr.roll1)) {
+        const nxt = f[i+1]; if (!nxt || nxt.roll1==='') return false;
+        if (isX(nxt.roll1)) {
+            if (i+1===9) return nxt.roll2 !== '';
+            return f[i+2] && f[i+2].roll1 !== '';
+        }
+        return nxt.roll2 !== '';
+    }
+    if (fr.roll2==='/') return f[i+1] && f[i+1].roll1!=='';
+    return fr.roll2 !== '';
+}
+function calcRegularFrame(i, f) {
+    const fr = f[i];
+    if (isX(fr.roll1)) return 10 + getNext2(i, f);
+    if (fr.roll2==='/') return 10 + rv(f[i+1]?.roll1||'');
+    return rv(fr.roll1) + rvp(fr.roll2, fr.roll1);
+}
+function calcTenthFrame(fr) { return rv(fr.roll1) + rvp(fr.roll2, fr.roll1) + rvp(fr.roll3, fr.roll2); }
+function getNext2(i, f) {
+    const nxt = f[i+1]; if (!nxt) return 0;
+    if (isX(nxt.roll1)) {
+        if (i+1===9) return 10 + rv(nxt.roll2);
+        return 10 + rv(f[i+2]?.roll1||'');
+    }
+    return rv(nxt.roll1) + rvp(nxt.roll2, nxt.roll1);
+}
+function isX(r) { return r==='X'; }
+function rv(r) { if(!r||r==='-'||r==='F') return 0; if(r==='X') return 10; return parseInt(r)||0; }
+function rvp(r, prev) { if(!r) return 0; if(r==='/') return 10-rv(prev); return rv(r); }
+
+window.bowlRoll = (pin) => updateAndSend(s => {
+    const frames = s.frames || [];
+    for (let i = 0; i < 10; i++) {
+        const f = frames[i];
+        if (i < 9) {
+            if (f.roll1 === '') { f.roll1 = pin; break; }
+            if (f.roll1 !== 'X' && f.roll2 === '') { f.roll2 = pin; break; }
+        } else {
+            if (f.roll1 === '') { f.roll1 = pin; break; }
+            if (f.roll2 === '') { f.roll2 = pin; break; }
+            if (f.roll3 === '') { f.roll3 = pin; break; }
+        }
+    }
+    s.frames = calculateBowlingScores(frames);
+    const lastScored = [...s.frames].reverse().find(f => f.score > 0);
+    s.totalScore = lastScored ? lastScored.score : 0;
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// ── BASEBALL / SOFTBALL ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderBaseball() {
+    const s = currentState;
+    const inningLabel = s.isTopOfInning ? '\u25B2' : '\u25BC';
+    const sportName = s.isSoftball ? 'SOFTBALL' : 'BASEBALL';
+    const battingTeam = s.isTopOfInning ? (s.awayName||'AWAY') : (s.homeName||'HOME');
+    renderTeamScoreDisplay(s, 'INN', `${inningLabel}${s.currentInning}`,
+        `H:${s.homeHits} E:${s.homeErrors}`, `H:${s.awayHits} E:${s.awayErrors}`);
+    const hc = s.homeColor||'#1565C0', ac = s.awayColor||'#C62828';
+    $('scoringPanel').innerHTML = `
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);">Batting: ${esc(battingTeam)}</div>
+        <div class="count-display">
+            <div class="count-item"><span style="color:#4CAF50;">B</span>
+                <div class="count-dots">${[0,1,2,3].map(i=>`<div class="count-dot ball${i<s.balls?' active':''}" onclick="bbCount('balls',${i+1})"></div>`).join('')}</div>
+            </div>
+            <div class="count-item"><span style="color:var(--error);">S</span>
+                <div class="count-dots">${[0,1,2].map(i=>`<div class="count-dot strike${i<s.strikes?' active':''}" onclick="bbCount('strikes',${i+1})"></div>`).join('')}</div>
+            </div>
+            <div class="count-item"><span style="color:var(--warning);">O</span>
+                <div class="count-dots">${[0,1,2].map(i=>`<div class="count-dot out${i<s.outs?' active':''}" onclick="bbCount('outs',${i+1})"></div>`).join('')}</div>
+            </div>
+        </div>
+        <div class="diamond-container">
+            <div class="diamond">
+                <div class="base second${s.runnerOnSecond?' active':''}" onclick="bbBase('second')"></div>
+                <div class="base third${s.runnerOnThird?' active':''}" onclick="bbBase('third')"></div>
+                <div class="base first${s.runnerOnFirst?' active':''}" onclick="bbBase('first')"></div>
+            </div>
+        </div>
+        <div class="section-label">Count</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn" style="background:#2E7D32;" onclick="bbBall()">Ball</button>
+            <button class="score-btn neutral-btn" style="background:#C62828;" onclick="bbStrike()">Strike</button>
+            <button class="score-btn neutral-btn" style="background:#E65100;" onclick="bbFoulBall()">Foul</button>
+        </div>
+        <div class="section-label">Scoring</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${hc}" onclick="bbRun('home')">Run ${esc(s.homeName||'HOME')}</button>
+            <button class="score-btn" style="background:${ac}" onclick="bbRun('away')">Run ${esc(s.awayName||'AWAY')}</button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="bbOut()">Out</button>
+            <button class="score-btn neutral-btn small" onclick="bbHit('home')">Hit ${esc(s.homeName||'')}</button>
+            <button class="score-btn neutral-btn small" onclick="bbHit('away')">Hit ${esc(s.awayName||'')}</button>
+        </div>
+        <div class="section-label">Inning</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="bbToggleHalf()">
+                ${s.isTopOfInning ? '\u25B2 Top' : '\u25BC Bot'} &rarr; ${s.isTopOfInning ? '\u25BC Bot' : '\u25B2 Top'}
+            </button>
+            <button class="score-btn neutral-btn small" onclick="bbNextInning()">Next Inning</button>
+        </div>`;
+}
+window.bbBall = () => updateAndSend(s => {
+    s.balls++;
+    if (s.balls >= 4) { s.balls = 0; s.strikes = 0; /* walk — runner logic simplified */ }
+});
+window.bbStrike = () => updateAndSend(s => {
+    s.strikes++;
+    if (s.strikes >= 3) { s.strikes = 0; s.balls = 0; s.outs++; if (s.outs>=3) { s.outs=0; bbFlipHalf(s); } }
+});
+window.bbFoulBall = () => updateAndSend(s => { if (s.strikes < 2) s.strikes++; });
+window.bbOut = () => updateAndSend(s => { s.outs++; if (s.outs>=3) { s.outs=0; bbFlipHalf(s); } });
+window.bbRun = (team) => updateAndSend(s => {
+    if (team==='home') s.homeScore++; else s.awayScore++;
+});
+window.bbHit = (team) => updateAndSend(s => {
+    if (team==='home') s.homeHits++; else s.awayHits++;
+});
+window.bbBase = (base) => updateAndSend(s => {
+    if (base==='first') s.runnerOnFirst = !s.runnerOnFirst;
+    else if (base==='second') s.runnerOnSecond = !s.runnerOnSecond;
+    else if (base==='third') s.runnerOnThird = !s.runnerOnThird;
+});
+window.bbCount = (field, val) => updateAndSend(s => { s[field] = val; });
+window.bbToggleHalf = () => updateAndSend(s => { bbFlipHalf(s); });
+window.bbNextInning = () => updateAndSend(s => {
+    if (!s.isTopOfInning) s.currentInning++;
+    s.isTopOfInning = !s.isTopOfInning || true;
+    if (s.isTopOfInning) { /* already top */ }
+    s.isTopOfInning = true;
+    s.currentInning++;
+    s.outs = 0; s.balls = 0; s.strikes = 0;
+    s.runnerOnFirst = false; s.runnerOnSecond = false; s.runnerOnThird = false;
+});
+function bbFlipHalf(s) {
+    s.isTopOfInning = !s.isTopOfInning;
+    if (s.isTopOfInning) s.currentInning++;
+    s.outs = 0; s.balls = 0; s.strikes = 0;
+    s.runnerOnFirst = false; s.runnerOnSecond = false; s.runnerOnThird = false;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ── TENNIS ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderTennis() {
+    const s = currentState;
+    const gameScoreLabels = ['0','15','30','40','AD'];
+    const p1Game = s.isTiebreak ? s.tiebreakScore1 : gameScoreLabels[Math.min(s.player1GameScore,4)];
+    const p2Game = s.isTiebreak ? s.tiebreakScore2 : gameScoreLabels[Math.min(s.player2GameScore,4)];
+    const p1c = s.player1Color||'#1565C0', p2c = s.player2Color||'#C62828';
+    const p1sets = s.player1Sets||[0], p2sets = s.player2Sets||[0];
+
+    let gridHtml = `
+        <div class="tennis-score-grid">
+            <div class="cell header"></div>`;
+    for (let i = 0; i < p1sets.length; i++) {
+        const isCurrent = (i === s.currentSet - 1);
+        gridHtml += `<div class="cell header${isCurrent?' current':''}">S${i+1}</div>`;
+    }
+    gridHtml += `<div class="cell header" style="min-width:56px;">Game</div>`;
+    // Player 1
+    gridHtml += `<div class="cell name" style="color:${p1c};">
+        ${s.isPlayer1Serving ? '\u{1F3BE} ' : ''}${esc(s.player1Name)}
+    </div>`;
+    for (let i = 0; i < p1sets.length; i++) {
+        const isCurrent = (i === s.currentSet - 1);
+        gridHtml += `<div class="cell${isCurrent?' current':''}">${p1sets[i]}</div>`;
+    }
+    gridHtml += `<div class="cell game-score" style="color:${p1c};">${p1Game}</div>`;
+    // Player 2
+    gridHtml += `<div class="cell name" style="color:${p2c};">
+        ${!s.isPlayer1Serving ? '\u{1F3BE} ' : ''}${esc(s.player2Name)}
+    </div>`;
+    for (let i = 0; i < p2sets.length; i++) {
+        const isCurrent = (i === s.currentSet - 1);
+        gridHtml += `<div class="cell${isCurrent?' current':''}">${p2sets[i]}</div>`;
+    }
+    gridHtml += `<div class="cell game-score" style="color:${p2c};">${p2Game}</div>`;
+    gridHtml += '</div>';
+
+    $('scoreDisplay').innerHTML = `<div style="padding:8px 12px;">${gridHtml}</div>`;
+
+    const status = s.matchComplete ? 'Match Complete' :
+        (s.isTiebreak ? `Tiebreak | Set ${s.currentSet} | Bo${s.bestOf}` : `Set ${s.currentSet} | Bo${s.bestOf}`);
+    $('scoringPanel').innerHTML = `
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);">${status}</div>
+        <div class="section-label">Point Won By</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${p1c};font-size:20px;min-height:64px;" onclick="tennisPoint(1)">
+                Point<span class="btn-label">${esc(s.player1Name)}</span>
+            </button>
+            <button class="score-btn" style="background:${p2c};font-size:20px;min-height:64px;" onclick="tennisPoint(2)">
+                Point<span class="btn-label">${esc(s.player2Name)}</span>
+            </button>
+        </div>`;
+}
+
+window.tennisPoint = (player) => updateAndSend(s => {
+    if (s.matchComplete) return;
+    if (s.isTiebreak) {
+        if (player===1) s.tiebreakScore1++; else s.tiebreakScore2++;
+        const max = Math.max(s.tiebreakScore1, s.tiebreakScore2);
+        const min = Math.min(s.tiebreakScore1, s.tiebreakScore2);
+        // Switch serve every 2 points in tiebreak (after first point, then every 2)
+        const totalTBPoints = s.tiebreakScore1 + s.tiebreakScore2;
+        if (totalTBPoints === 1 || (totalTBPoints > 1 && (totalTBPoints - 1) % 2 === 0)) {
+            s.isPlayer1Serving = !s.isPlayer1Serving;
+        }
+        if (max >= 7 && max - min >= 2) {
+            // Tiebreak won
+            tennisWinGame(s, s.tiebreakScore1 > s.tiebreakScore2 ? 1 : 2);
+            s.isTiebreak = false;
+            s.tiebreakScore1 = 0; s.tiebreakScore2 = 0;
+        }
+    } else {
+        if (player===1) s.player1GameScore++; else s.player2GameScore++;
+        // Check for game won
+        const p1 = s.player1GameScore, p2 = s.player2GameScore;
+        if (p1 >= 4 || p2 >= 4) {
+            if (p1 >= 4 && p1 - p2 >= 2) { tennisWinGame(s, 1); }
+            else if (p2 >= 4 && p2 - p1 >= 2) { tennisWinGame(s, 2); }
+            // Deuce/AD continue
+        }
+    }
+});
+
+function tennisWinGame(s, player) {
+    // Increment games in current set
+    const setIdx = s.currentSet - 1;
+    while (s.player1Sets.length <= setIdx) s.player1Sets.push(0);
+    while (s.player2Sets.length <= setIdx) s.player2Sets.push(0);
+    if (player===1) s.player1Sets[setIdx]++;
+    else s.player2Sets[setIdx]++;
+    s.player1GameScore = 0; s.player2GameScore = 0;
+    // Switch serve
+    s.isPlayer1Serving = !s.isPlayer1Serving;
+    // Check for set won
+    const g1 = s.player1Sets[setIdx], g2 = s.player2Sets[setIdx];
+    if ((g1 >= 6 || g2 >= 6) && Math.abs(g1-g2) >= 2) {
+        tennisWinSet(s, g1 > g2 ? 1 : 2);
+    } else if (g1 === s.tiebreakAt && g2 === s.tiebreakAt) {
+        s.isTiebreak = true;
+        s.tiebreakScore1 = 0; s.tiebreakScore2 = 0;
+    }
+}
+
+function tennisWinSet(s, player) {
+    if (player===1) s.player1SetsWon++; else s.player2SetsWon++;
+    const setsToWin = Math.ceil(s.bestOf / 2);
+    if (s.player1SetsWon >= setsToWin || s.player2SetsWon >= setsToWin) {
+        s.matchComplete = true;
+    } else {
+        s.currentSet++;
+        s.player1Sets.push(0);
+        s.player2Sets.push(0);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ── PICKLEBALL ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderPickleball() {
+    const s = currentState;
+    const t1c = s.team1Color||'#1565C0', t2c = s.team2Color||'#C62828';
+    const serving1 = s.servingTeam === 1;
+    const serverLabel = s.isSingles ? '' : ` (Server ${s.serverNumber})`;
+    $('scoreDisplay').innerHTML = `
+        <div class="score-display">
+            <div class="team-score-block" style="background:${t1c}15;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${t1c};"></div>
+                <div class="team-name">${esc(s.team1Name||'TEAM 1')}</div>
+                <div class="team-score" style="color:${t1c}">${s.team1Score}</div>
+                ${serving1 ? `<div class="serve-indicator">\u{1F3D3} Serving${serverLabel}</div>` : ''}
+            </div>
+            <div class="score-divider">
+                <div class="period-label">GAME</div>
+                <div class="period-value">${s.team1GamesWon}-${s.team2GamesWon}</div>
+                <div style="font-size:10px;color:var(--text-muted);">Bo${s.bestOf}</div>
+            </div>
+            <div class="team-score-block" style="background:${t2c}15;">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${t2c};"></div>
+                <div class="team-name">${esc(s.team2Name||'TEAM 2')}</div>
+                <div class="team-score" style="color:${t2c}">${s.team2Score}</div>
+                ${!serving1 ? `<div class="serve-indicator">\u{1F3D3} Serving${serverLabel}</div>` : ''}
+            </div>
+        </div>`;
+
+    const status = s.matchComplete ? 'Match Complete' : `To ${s.scoreToWin}, win by ${s.winBy}`;
+    $('scoringPanel').innerHTML = `
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);">${status}</div>
+        <div class="section-label">Serving Team Scores</div>
+        <div class="btn-row">
+            <button class="score-btn accent-btn" style="font-size:24px;min-height:64px;" onclick="pbPoint()">
+                +1<span class="btn-label">${esc(serving1 ? (s.team1Name||'TEAM 1') : (s.team2Name||'TEAM 2'))}</span>
+            </button>
+        </div>
+        <div class="section-label">Side Out</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn" style="min-height:56px;" onclick="pbSideOut()">
+                Side Out<span class="btn-label">Switch serve</span>
+            </button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="pbScoreMinus(1)">-1 ${esc(s.team1Name||'T1')}</button>
+            <button class="score-btn neutral-btn small" onclick="pbScoreMinus(2)">-1 ${esc(s.team2Name||'T2')}</button>
+        </div>`;
+}
+
+window.pbPoint = () => updateAndSend(s => {
+    if (s.matchComplete) return;
+    if (s.servingTeam === 1) s.team1Score++; else s.team2Score++;
+    // Check for game win
+    const s1 = s.team1Score, s2 = s.team2Score;
+    if ((s1 >= s.scoreToWin || s2 >= s.scoreToWin) && Math.abs(s1-s2) >= s.winBy) {
+        if (s1 > s2) s.team1GamesWon++; else s.team2GamesWon++;
+        const gamesNeeded = Math.ceil(s.bestOf / 2);
+        if (s.team1GamesWon >= gamesNeeded || s.team2GamesWon >= gamesNeeded) {
+            s.matchComplete = true;
+        } else {
+            s.team1Score = 0; s.team2Score = 0;
+            s.currentGame++; s.serverNumber = 2;
+        }
+    }
+});
+
+window.pbSideOut = () => updateAndSend(s => {
+    if (s.isSingles) {
+        s.servingTeam = s.servingTeam === 1 ? 2 : 1;
+    } else {
+        if (s.serverNumber === 1 || (s.currentGame === 1 && s.team1Score === 0 && s.team2Score === 0 && s.serverNumber === 2)) {
+            s.servingTeam = s.servingTeam === 1 ? 2 : 1;
+            s.serverNumber = 1;
+        } else {
+            s.serverNumber = s.serverNumber === 1 ? 2 : 1;
+            if (s.serverNumber === 1) {
+                // Second server done, side out
+                s.servingTeam = s.servingTeam === 1 ? 2 : 1;
+                s.serverNumber = 1;
+            }
+        }
+    }
+});
+
+window.pbScoreMinus = (team) => updateAndSend(s => {
+    if (team===1) s.team1Score = Math.max(0, s.team1Score-1);
+    else s.team2Score = Math.max(0, s.team2Score-1);
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// ── HOCKEY ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderHockey() {
+    const s = currentState;
+    const pLabel = s.currentPeriod <= 3 ? `P${s.currentPeriod}` : (s.currentPeriod === 4 ? 'OT' : 'SO');
+    renderTeamScoreDisplay(s, 'PERIOD', pLabel,
+        `SOG:${s.homeShotsOnGoal} PIM:${s.homePenaltyMinutes}`,
+        `SOG:${s.awayShotsOnGoal} PIM:${s.awayPenaltyMinutes}`);
+    const hc = s.homeColor||'#1565C0', ac = s.awayColor||'#C62828';
+    $('scoringPanel').innerHTML = `
+        <div class="section-label">Goals</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${hc};font-size:24px;" onclick="hkGoal('home')">
+                \u{1F3D2} +1<span class="btn-label">${esc(s.homeName||'HOME')}</span>
+            </button>
+            <button class="score-btn" style="background:${ac};font-size:24px;" onclick="hkGoal('away')">
+                \u{1F3D2} +1<span class="btn-label">${esc(s.awayName||'AWAY')}</span>
+            </button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="hkGoal('home',-1)">-1</button>
+            <button class="score-btn neutral-btn small" onclick="hkGoal('away',-1)">-1</button>
+        </div>
+        <div class="section-label">Shots on Goal</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="hkStat('homeShotsOnGoal',1)">SOG +1 ${esc(s.homeName||'H')}</button>
+            <button class="score-btn neutral-btn small" onclick="hkStat('awayShotsOnGoal',1)">SOG +1 ${esc(s.awayName||'A')}</button>
+        </div>
+        <div class="section-label">Penalties (minutes)</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="hkStat('homePenaltyMinutes',2)">PIM +2 ${esc(s.homeName||'H')}</button>
+            <button class="score-btn neutral-btn small" onclick="hkStat('awayPenaltyMinutes',2)">PIM +2 ${esc(s.awayName||'A')}</button>
+        </div>
+        <div class="section-label">Period</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="hkPeriod(-1)">-</button>
+            <button class="score-btn accent-btn small">${pLabel}</button>
+            <button class="score-btn neutral-btn small" onclick="hkPeriod(1)">+</button>
+        </div>`;
+}
+window.hkGoal = (team, d=1) => updateAndSend(s => {
+    if (team==='home') {
+        s.homeScore = Math.max(0, s.homeScore+d);
+        if (d>0 && s.currentPeriod<=3) { s.homeScoreByPeriod[s.currentPeriod-1] = (s.homeScoreByPeriod[s.currentPeriod-1]||0)+1; }
+    } else {
+        s.awayScore = Math.max(0, s.awayScore+d);
+        if (d>0 && s.currentPeriod<=3) { s.awayScoreByPeriod[s.currentPeriod-1] = (s.awayScoreByPeriod[s.currentPeriod-1]||0)+1; }
+    }
+});
+window.hkStat = (field, d) => updateAndSend(s => { s[field] = Math.max(0, (s[field]||0)+d); });
+window.hkPeriod = d => updateAndSend(s => { s.currentPeriod = Math.max(1, s.currentPeriod+d); });
+
+// ══════════════════════════════════════════════════════════════════════
+// ── LACROSSE ─────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function renderLacrosse() {
+    const s = currentState;
+    const qLabel = s.currentQuarter <= 4 ? `Q${s.currentQuarter}` : 'OT';
+    renderTeamScoreDisplay(s, 'QTR', qLabel,
+        `SOG:${s.homeShotsOnGoal} GB:${s.homeGroundBalls}`,
+        `SOG:${s.awayShotsOnGoal} GB:${s.awayGroundBalls}`);
+    const hc = s.homeColor||'#1565C0', ac = s.awayColor||'#C62828';
+    $('scoringPanel').innerHTML = `
+        <div class="section-label">Goals</div>
+        <div class="btn-row">
+            <button class="score-btn" style="background:${hc};font-size:24px;" onclick="laxGoal('home')">
+                \u{1F94D} +1<span class="btn-label">${esc(s.homeName||'HOME')}</span>
+            </button>
+            <button class="score-btn" style="background:${ac};font-size:24px;" onclick="laxGoal('away')">
+                \u{1F94D} +1<span class="btn-label">${esc(s.awayName||'AWAY')}</span>
+            </button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="laxGoal('home',-1)">-1</button>
+            <button class="score-btn neutral-btn small" onclick="laxGoal('away',-1)">-1</button>
+        </div>
+        <div class="section-label">Stats</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="laxStat('homeShotsOnGoal',1)">SOG +1</button>
+            <button class="score-btn neutral-btn small" onclick="laxStat('homeGroundBalls',1)">GB +1</button>
+            <button class="score-btn neutral-btn small" onclick="laxStat('homeFaceoffsWon',1)">FO +1</button>
+        </div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="laxStat('awayShotsOnGoal',1)">SOG +1</button>
+            <button class="score-btn neutral-btn small" onclick="laxStat('awayGroundBalls',1)">GB +1</button>
+            <button class="score-btn neutral-btn small" onclick="laxStat('awayFaceoffsWon',1)">FO +1</button>
+        </div>
+        <div class="section-label">Quarter</div>
+        <div class="btn-row">
+            <button class="score-btn neutral-btn small" onclick="laxQtr(-1)">-</button>
+            <button class="score-btn accent-btn small">${qLabel}</button>
+            <button class="score-btn neutral-btn small" onclick="laxQtr(1)">+</button>
+        </div>`;
+}
+window.laxGoal = (team, d=1) => updateAndSend(s => {
+    if (team==='home') {
+        s.homeScore = Math.max(0, s.homeScore+d);
+        if (d>0 && s.currentQuarter<=4) { s.homeScoreByQuarter[s.currentQuarter-1] = (s.homeScoreByQuarter[s.currentQuarter-1]||0)+1; }
+    } else {
+        s.awayScore = Math.max(0, s.awayScore+d);
+        if (d>0 && s.currentQuarter<=4) { s.awayScoreByQuarter[s.currentQuarter-1] = (s.awayScoreByQuarter[s.currentQuarter-1]||0)+1; }
+    }
+});
+window.laxStat = (field, d) => updateAndSend(s => { s[field] = Math.max(0, (s[field]||0)+d); });
+window.laxQtr = d => updateAndSend(s => { s.currentQuarter = Math.max(1, s.currentQuarter+d); });
+
+// ══════════════════════════════════════════════════════════════════════
+// ── INIT ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+function init() {
+    // Auto-fill code from URL
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+        $('codeInput').value = code.toUpperCase();
+        // Auto-join after short delay
+        setTimeout(() => joinGame(), 300);
+    }
+
+    // Enter key on code input
+    $('codeInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') joinGame();
+    });
+
+    // Auto-uppercase
+    $('codeInput').addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+}
+
+init();
+</script>
+</body>
+</html>
