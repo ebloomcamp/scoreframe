@@ -38,6 +38,42 @@ html, body {
 }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
 
+/* User Bar */
+.user-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; margin-top: 16px; flex-wrap: wrap;
+}
+.user-info {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-secondary);
+}
+.user-photo {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid var(--bg-elevated);
+}
+.sign-in-btn {
+    padding: 8px 20px; background: white; color: #333;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.sign-in-btn:hover { background: #f0f0f0; }
+.sign-out-btn {
+    padding: 4px 12px; background: none; border: 1px solid var(--bg-elevated);
+    color: var(--text-muted); border-radius: 6px; font-size: 11px;
+    cursor: pointer;
+}
+.follow-btn {
+    padding: 8px 20px; background: var(--accent); color: #1A1A1A;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+}
+.follow-btn:disabled { opacity: 0.5; }
+.follow-btn.following {
+    background: var(--bg-elevated); color: var(--text-secondary);
+    border: 1px solid var(--accent);
+}
+.follow-status { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
 /* Sections */
 .section { padding: 20px 24px; }
 .section-title {
@@ -74,7 +110,7 @@ html, body {
     cursor: pointer; text-decoration: none;
 }
 
-/* Access Request */
+/* Access Gate (private hubs) */
 .access-section { text-align: center; padding: 40px 24px; }
 .access-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .access-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
@@ -134,17 +170,30 @@ html, body {
         <div class="team-sport" id="teamSport"></div>
         <div id="liveBadge" style="display:none;" class="live-badge">● LIVE NOW</div>
         <div class="team-code" id="teamCode"></div>
+
+        <!-- User bar: sign-in / follow / account -->
+        <div class="user-bar" id="userBar">
+            <button class="sign-in-btn" id="signInBtn" onclick="doSignIn()">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Sign in with Google
+            </button>
+        </div>
+        <div class="follow-status" id="followStatus"></div>
     </div>
 
-    <!-- Access Gate -->
+    <!-- Access Gate (private/invite-only hubs — requires sign-in) -->
     <div id="accessGate" style="display:none;" class="access-section">
         <div class="access-title">🔒 This team is private</div>
-        <div class="access-desc">Request access to see the schedule, live streams, and game history.</div>
-        <button class="access-btn" id="requestBtn" onclick="requestAccess()">Request Access</button>
+        <div class="access-desc" id="accessDesc">Sign in with your ScoreFrame account to request access.</div>
+        <button class="sign-in-btn" id="gateSignInBtn" onclick="doSignIn()" style="margin-bottom:12px;">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Sign in with Google
+        </button>
+        <button class="access-btn" id="requestBtn" onclick="requestAccess()" style="display:none;">Request Access</button>
         <div class="access-status" id="accessStatus"></div>
     </div>
 
-    <!-- Content (visible to approved subscribers + managers) -->
+    <!-- Content (visible to approved subscribers + managers for private, everyone for public) -->
     <div id="teamContent" style="display:none;">
         <!-- Live Now -->
         <div id="liveSection" style="display:none;" class="section">
@@ -168,6 +217,7 @@ html, body {
 
 <div class="footer">
     <div>Powered by <a href="https://scoreframe.app">Score<strong>Frame</strong></a></div>
+    <div style="margin-top:8px;"><a href="https://scoreframe.app">Get the app</a> to record games with live scoreboards</div>
 </div>
 
 <script type="module">
@@ -176,7 +226,7 @@ import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy, where, 
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getDatabase, ref, onValue }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-import { getAuth, signInAnonymously }
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -193,12 +243,14 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const rtdb = getDatabase(app);
 const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 let hubCode = null;
 let hubProfile = null;
-let uid = null;
+let currentUser = null;  // null = not signed in, object = signed in with Google
 let isManager = false;
 let isSubscriber = false;
+let subStatus = null;  // null, 'pending', 'approved', 'blocked'
 
 const $ = id => document.getElementById(id);
 
@@ -226,16 +278,18 @@ if (!hubCode || hubCode.length < 4) {
     $('loadingScreen').style.display = 'none';
     $('notFoundScreen').style.display = 'block';
 } else {
+    // Listen for auth state — user may already be signed in from a previous visit
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user && !user.isAnonymous ? user : null;
+        // If page is already loaded, update the user bar
+        if (hubProfile) updateUserBar();
+    });
     loadTeam();
 }
 
 async function loadTeam() {
     try {
-        // Auth (anonymous — for Firestore read access)
-        const cred = await signInAnonymously(auth);
-        uid = cred.user.uid;
-
-        // Load profile
+        // Load profile (no auth required for read)
         const profileDoc = await getDoc(doc(db, 'teamHubs', hubCode));
         if (!profileDoc.exists()) {
             $('loadingScreen').style.display = 'none';
@@ -246,37 +300,127 @@ async function loadTeam() {
         hubProfile = profileDoc.data();
         renderHeader();
 
-        // Check access
-        const managerDoc = await getDoc(doc(db, 'teamHubs', hubCode, 'managers', uid));
-        isManager = managerDoc.exists();
-
-        const subDoc = await getDoc(doc(db, 'teamHubs', hubCode, 'subscribers', uid));
-        const subStatus = subDoc.exists() ? subDoc.data().status : null;
-        isSubscriber = subStatus === 'approved';
+        // Check access if user is signed in
+        if (currentUser) {
+            await checkAccess();
+        }
 
         $('loadingScreen').style.display = 'none';
         $('teamPage').style.display = 'block';
 
-        if (hubProfile.visibility === 'public' || isManager || isSubscriber) {
-            $('teamContent').style.display = 'block';
-            loadSchedule();
-            loadPastGames();
-            listenForLive();
-        } else {
-            $('accessGate').style.display = 'block';
-            if (subStatus === 'pending') {
-                $('requestBtn').disabled = true;
-                $('accessStatus').textContent = '⏳ Access request pending — waiting for team owner approval';
-            } else if (subStatus === 'blocked') {
-                $('requestBtn').style.display = 'none';
-                $('accessStatus').textContent = 'Access denied by team owner';
-            }
-        }
+        showContent();
     } catch (e) {
         console.error('Load error:', e);
         $('loadingScreen').style.display = 'none';
         $('notFoundScreen').style.display = 'block';
     }
+}
+
+async function checkAccess() {
+    if (!currentUser) { isManager = false; isSubscriber = false; subStatus = null; return; }
+    const uid = currentUser.uid;
+    try {
+        const managerDoc = await getDoc(doc(db, 'teamHubs', hubCode, 'managers', uid));
+        isManager = managerDoc.exists();
+        const subDoc = await getDoc(doc(db, 'teamHubs', hubCode, 'subscribers', uid));
+        subStatus = subDoc.exists() ? subDoc.data().status : null;
+        isSubscriber = subStatus === 'approved';
+    } catch (e) {
+        console.error('Access check error:', e);
+    }
+}
+
+function showContent() {
+    const isPublic = hubProfile.visibility === 'public';
+
+    if (isPublic) {
+        // Public hub: everyone sees content, no gate
+        $('accessGate').style.display = 'none';
+        $('teamContent').style.display = 'block';
+        loadSchedule();
+        loadPastGames();
+        listenForLive();
+    } else if (isManager || isSubscriber) {
+        // Private hub but user has access
+        $('accessGate').style.display = 'none';
+        $('teamContent').style.display = 'block';
+        loadSchedule();
+        loadPastGames();
+        listenForLive();
+    } else {
+        // Private hub, no access — show gate
+        $('teamContent').style.display = 'none';
+        $('accessGate').style.display = 'block';
+
+        if (!currentUser) {
+            // Not signed in — show sign-in prompt
+            $('accessDesc').textContent = 'Sign in with your Google account to request access.';
+            $('gateSignInBtn').style.display = 'inline-flex';
+            $('requestBtn').style.display = 'none';
+            $('accessStatus').textContent = '';
+        } else {
+            // Signed in but not approved
+            $('gateSignInBtn').style.display = 'none';
+            if (subStatus === 'pending') {
+                $('accessDesc').textContent = '';
+                $('requestBtn').style.display = 'none';
+                $('accessStatus').textContent = '⏳ Access request pending — waiting for team owner approval';
+            } else if (subStatus === 'blocked') {
+                $('accessDesc').textContent = '';
+                $('requestBtn').style.display = 'none';
+                $('accessStatus').textContent = 'Access denied by team owner';
+            } else {
+                $('accessDesc').textContent = 'Request access to see the schedule, live streams, and game history.';
+                $('requestBtn').style.display = 'inline-block';
+                $('accessStatus').textContent = '';
+            }
+        }
+    }
+
+    updateUserBar();
+}
+
+function updateUserBar() {
+    const bar = $('userBar');
+    const isPublic = hubProfile && hubProfile.visibility === 'public';
+
+    if (!currentUser) {
+        // Show sign-in button (unless already shown in gate)
+        bar.innerHTML = `
+            <button class="sign-in-btn" onclick="doSignIn()">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Sign in
+            </button>`;
+        $('followStatus').textContent = isPublic ? '' : '';
+        return;
+    }
+
+    // Signed in — show user info + follow button (for public hubs) or status
+    const photo = currentUser.photoURL ? `<img class="user-photo" src="${currentUser.photoURL}" alt="">` : '';
+    const name = currentUser.displayName || currentUser.email || 'User';
+
+    let followBtn = '';
+    let statusText = '';
+
+    if (isManager) {
+        statusText = '👑 Team Manager';
+    } else if (isSubscriber) {
+        followBtn = `<button class="follow-btn following" onclick="doUnfollow()">✓ Following</button>`;
+    } else if (subStatus === 'pending') {
+        statusText = '⏳ Follow request pending';
+    } else if (subStatus === 'blocked') {
+        // Don't show anything
+    } else if (isPublic) {
+        // Public hub — user can follow for notifications
+        followBtn = `<button class="follow-btn" onclick="doFollow()">Follow Team</button>`;
+    }
+    // Private hubs: follow/request is handled by the access gate, not the user bar
+
+    bar.innerHTML = `
+        <div class="user-info">${photo} ${name}</div>
+        ${followBtn}
+        <button class="sign-out-btn" onclick="doSignOut()">Sign out</button>`;
+    $('followStatus').textContent = statusText;
 }
 
 function renderHeader() {
@@ -288,6 +432,94 @@ function renderHeader() {
     $('teamCode').textContent = hubCode;
     document.title = `${p.teamName} — ScoreFrame`;
 }
+
+// ── Auth ──
+
+window.doSignIn = async function() {
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        currentUser = result.user;
+        await checkAccess();
+        showContent();
+    } catch (e) {
+        if (e.code !== 'auth/popup-closed-by-user') {
+            console.error('Sign-in error:', e);
+            $('followStatus').textContent = 'Sign-in failed. Try again.';
+        }
+    }
+};
+
+window.doSignOut = async function() {
+    try {
+        await signOut(auth);
+        currentUser = null;
+        isManager = false;
+        isSubscriber = false;
+        subStatus = null;
+        showContent();
+    } catch (e) {
+        console.error('Sign-out error:', e);
+    }
+};
+
+// ── Follow / Unfollow (public hubs) ──
+
+window.doFollow = async function() {
+    if (!currentUser) { doSignIn(); return; }
+    try {
+        await setDoc(doc(db, 'teamHubs', hubCode, 'subscribers', currentUser.uid), {
+            name: currentUser.displayName || 'User',
+            email: currentUser.email || '',
+            status: 'approved',  // Public hubs: auto-approve
+            requestedAt: Date.now(),
+            approvedAt: Date.now()
+        });
+        subStatus = 'approved';
+        isSubscriber = true;
+        updateUserBar();
+    } catch (e) {
+        console.error('Follow error:', e);
+        $('followStatus').textContent = 'Failed to follow. Try again.';
+    }
+};
+
+window.doUnfollow = async function() {
+    if (!currentUser) return;
+    try {
+        const { deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        await deleteDoc(doc(db, 'teamHubs', hubCode, 'subscribers', currentUser.uid));
+        subStatus = null;
+        isSubscriber = false;
+        updateUserBar();
+    } catch (e) {
+        console.error('Unfollow error:', e);
+    }
+};
+
+// ── Request Access (private hubs) ──
+
+window.requestAccess = async function() {
+    if (!currentUser) { doSignIn(); return; }
+    $('requestBtn').disabled = true;
+    $('accessStatus').textContent = 'Sending request...';
+    try {
+        await setDoc(doc(db, 'teamHubs', hubCode, 'subscribers', currentUser.uid), {
+            name: currentUser.displayName || 'User',
+            email: currentUser.email || '',
+            status: 'pending',
+            requestedAt: Date.now(),
+            approvedAt: 0
+        });
+        subStatus = 'pending';
+        $('requestBtn').style.display = 'none';
+        $('accessStatus').textContent = '⏳ Request sent! Waiting for team owner approval.';
+    } catch (e) {
+        $('accessStatus').textContent = 'Error sending request. Please try again.';
+        $('requestBtn').disabled = false;
+    }
+};
+
+// ── Content Loading ──
 
 async function loadSchedule() {
     try {
@@ -312,7 +544,8 @@ async function loadSchedule() {
             const isLive = g.status === 'live';
             const statusClass = isLive ? 'live' : g.status === 'completed' ? 'completed' : 'scheduled';
             const statusLabel = isLive ? '● LIVE' : g.status === 'completed' ? 'Final' : formatDate(g.date);
-            const watchBtn = isLive && g.streamCode ? `<a class="watch-btn" href="/watch?code=${g.streamCode}">▶ Watch Live</a>` : '';
+            const watchUrl = g.streamUrl || (g.streamCode ? `/watch.html?code=${g.streamCode}` : '');
+            const watchBtn = isLive && watchUrl ? `<a class="watch-btn" href="${watchUrl}" target="_blank">▶ Watch Live</a>` : '';
             const score = g.status === 'completed' ? `<div class="game-score">${g.homeScore} - ${g.awayScore}</div>` : '';
             return `<div class="game-card ${isLive ? 'live' : ''}">
                 <div class="game-date"><span class="game-status ${statusClass}">${statusLabel}</span></div>
@@ -361,44 +594,43 @@ async function loadPastGames() {
 }
 
 function listenForLive() {
-    // Check for active stream via RTDB
-    if (!hubProfile.activeStreamCode) return;
-    const code = hubProfile.activeStreamCode;
-    onValue(ref(rtdb, `streams/${code}/meta`), (snap) => {
-        if (!snap.exists()) return;
-        const meta = snap.val();
-        if (meta.status === 'live') {
-            $('liveBadge').style.display = 'inline-flex';
-            $('liveSection').style.display = 'block';
-            $('liveGame').innerHTML = `
-                <div class="game-card live">
-                    <div class="game-status live">● LIVE NOW</div>
-                    <div class="game-opponent" style="margin-top:8px;">${hubProfile.teamName} is streaming</div>
-                    <a class="watch-btn" href="/watch?code=${code}">▶ Watch Live</a>
-                </div>`;
-        } else {
-            $('liveBadge').style.display = 'none';
-            $('liveSection').style.display = 'none';
-        }
-    });
-}
+    const streamUrl = hubProfile.activeStreamUrl || '';
+    const code = hubProfile.activeStreamCode || '';
+    if (!code && !streamUrl) return;
 
-window.requestAccess = async function() {
-    $('requestBtn').disabled = true;
-    $('accessStatus').textContent = 'Sending request...';
-    try {
-        await setDoc(doc(db, 'teamHubs', hubCode, 'subscribers', uid), {
-            name: 'Web Viewer',
-            status: 'pending',
-            requestedAt: Date.now(),
-            approvedAt: 0
-        });
-        $('accessStatus').textContent = '⏳ Request sent! Waiting for team owner approval.';
-    } catch (e) {
-        $('accessStatus').textContent = 'Error sending request. Please try again.';
-        $('requestBtn').disabled = false;
+    const watchLink = streamUrl || `/watch.html?code=${code}`;
+
+    if (streamUrl) {
+        $('liveBadge').style.display = 'inline-flex';
+        $('liveSection').style.display = 'block';
+        $('liveGame').innerHTML = `
+            <div class="game-card live">
+                <div class="game-status live">● LIVE NOW</div>
+                <div class="game-opponent" style="margin-top:8px;">${hubProfile.teamName} is streaming</div>
+                <a class="watch-btn" href="${watchLink}" target="_blank">▶ Watch Live</a>
+            </div>`;
     }
-};
+
+    if (code) {
+        onValue(ref(rtdb, `streams/${code}/meta`), (snap) => {
+            if (!snap.exists()) return;
+            const meta = snap.val();
+            if (meta.status === 'live') {
+                $('liveBadge').style.display = 'inline-flex';
+                $('liveSection').style.display = 'block';
+                $('liveGame').innerHTML = `
+                    <div class="game-card live">
+                        <div class="game-status live">● LIVE NOW</div>
+                        <div class="game-opponent" style="margin-top:8px;">${hubProfile.teamName} is streaming</div>
+                        <a class="watch-btn" href="${watchLink}" target="_blank">▶ Watch Live</a>
+                    </div>`;
+            } else if (!streamUrl) {
+                $('liveBadge').style.display = 'none';
+                $('liveSection').style.display = 'none';
+            }
+        });
+    }
+}
 </script>
 </body>
 </html>
