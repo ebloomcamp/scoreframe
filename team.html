@@ -144,6 +144,24 @@ html, body {
     text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px;
     border-top: 1px solid var(--bg-elevated); margin-top: 20px;
 }
+/* Player Cards */
+.player-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg-surface); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 8px;
+    border: 1px solid var(--bg-elevated);
+}
+.player-number {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: white;
+    background: var(--bg-elevated); flex-shrink: 0;
+}
+.player-info { flex: 1; }
+.player-name { font-size: 14px; font-weight: 600; }
+.player-position { font-size: 11px; color: var(--text-muted); }
+.player-stat { font-size: 11px; color: var(--accent); font-weight: 600; }
+
 .footer a { color: var(--accent); text-decoration: none; }
 
 /* Auth Modal */
@@ -242,6 +260,12 @@ html, body {
         <div class="section">
             <div class="section-title">📅 Upcoming Games</div>
             <div id="upcomingGames"></div>
+        </div>
+
+        <!-- Roster / Players -->
+        <div class="section" id="rosterSection" style="display:none;">
+            <div class="section-title">👥 Roster</div>
+            <div id="rosterList"></div>
         </div>
 
         <!-- Past Games -->
@@ -421,14 +445,16 @@ function showContent() {
         $('accessGate').style.display = 'none';
         $('teamContent').style.display = 'block';
         loadSchedule();
-        loadPastGames();
+        loadRoster();
+            loadPastGames();
         listenForLive();
     } else if (isManager || isSubscriber) {
         // Private hub but user has access
         $('accessGate').style.display = 'none';
         $('teamContent').style.display = 'block';
         loadSchedule();
-        loadPastGames();
+        loadRoster();
+            loadPastGames();
         listenForLive();
     } else {
         // Private hub, no access — show gate
@@ -726,6 +752,48 @@ async function loadSchedule() {
     } catch (e) {
         console.error('Schedule error:', e);
         $('upcomingGames').innerHTML = '<div class="empty">Unable to load schedule</div>';
+    }
+}
+
+async function loadRoster() {
+    if (!teamId) return;
+    try {
+        const snap = await getDocs(collection(db, 'teams', teamId, 'players'));
+        if (snap.empty) return;
+
+        const section = $('rosterSection');
+        const container = $('rosterList');
+        section.style.display = 'block';
+
+        const sport = hubProfile.sport || '';
+        let html = '';
+        snap.forEach(d => {
+            const p = d.data();
+            const num = p.number || '';
+            const pos = p.position ? `<div class="player-position">${p.position}</div>` : '';
+
+            // Pick the most relevant stat to show
+            let stat = '';
+            if (p.gamesPlayed > 0) {
+                if (p.bowlingAverage || p.average > 0) stat = `Avg: ${(p.average || 0).toFixed(1)} · High: ${p.highScore || 0}`;
+                else if (p.battingAvg > 0) stat = `AVG: ${p.battingAvg.toFixed(3)} · ${p.totalHits || 0}H · ${p.totalRBI || 0}RBI`;
+                else if (p.totalKills > 0 || p.totalAces > 0) stat = `${p.totalKills || 0}K · ${p.totalAces || 0}A · ${p.totalAssists || 0}AST`;
+                else if (p.wins > 0 || p.losses > 0) stat = `${p.wins}W-${p.losses}L`;
+                else stat = `${p.gamesPlayed} games`;
+            }
+            const statHtml = stat ? `<div class="player-stat">${stat}</div>` : '';
+
+            html += `<div class="player-card">
+                <div class="player-number">${num || '–'}</div>
+                <div class="player-info">
+                    <div class="player-name">${p.name || 'Player'}</div>
+                    ${pos}${statHtml}
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('Roster error:', e);
     }
 }
 
