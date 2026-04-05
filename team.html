@@ -811,11 +811,25 @@ async function loadPastGames() {
         let html = '';
         snap.forEach(d => {
             const g = d.data();
+            // Collect stream links from streams array or legacy streamUrl/streamCode
+            let streamLinks = '';
+            const streams = g.streams || [];
+            if (streams.length > 0) {
+                streamLinks = streams.map((s, i) => {
+                    if (!s.url) return '';
+                    const label = s.platform === 'youtube' ? '▶ YouTube' : s.platform === 'twitch' ? '▶ Twitch' : `▶ Stream ${i+1}`;
+                    return `<a href="${s.url}" target="_blank" style="color:var(--accent);font-size:12px;font-weight:700;margin-right:12px;text-decoration:none;">${label}</a>`;
+                }).join('');
+            } else if (g.streamUrl || g.streamCode) {
+                const url = g.streamUrl || `/watch.html?code=${g.streamCode}`;
+                streamLinks = `<a href="${url}" target="_blank" style="color:var(--accent);font-size:12px;font-weight:700;text-decoration:none;">▶ Watch Replay</a>`;
+            }
             html += `<div class="game-card">
                 <div class="past-game">
                     <div class="teams">
                         <div class="game-date">${formatDate(g.date)}</div>
                         <div class="game-opponent">${g.homeTeam || 'Home'} vs ${g.awayTeam || 'Away'}</div>
+                        ${streamLinks ? `<div style="margin-top:4px;">${streamLinks}</div>` : ''}
                     </div>
                     <div class="score">${g.homeScore} - ${g.awayScore}</div>
                 </div>
