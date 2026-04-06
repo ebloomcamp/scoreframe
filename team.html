@@ -845,7 +845,7 @@ async function loadSchedule() {
         const upcoming = [];
         snap.forEach(d => {
             const game = { id: d.id, ...d.data() };
-            if (game.status !== 'cancelled' && (game.date >= now - 3600000 || game.status === 'live')) {
+            if (game.status === 'scheduled' || game.status === 'live') {
                 upcoming.push(game);
             }
         });
@@ -863,13 +863,18 @@ async function loadSchedule() {
             const watchUrl = g.streamUrl || (g.streamCode ? `/watch.html?code=${g.streamCode}` : '');
             const watchBtn = isLive && watchUrl ? `<a class="watch-btn" href="${watchUrl}" target="_blank">▶ Watch Live</a>` : '';
             const score = g.status === 'completed' ? `<div class="game-score">${g.homeScore} - ${g.awayScore}</div>` : '';
+            const managerActions = isManager ? `<div style="margin-top:8px;display:flex;gap:8px;">
+                <button onclick="window._deleteScheduleGame('${g.id}')" style="padding:4px 10px;background:transparent;color:var(--error);border:1px solid var(--error);border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
+                <button onclick="window._cancelScheduleGame('${g.id}')" style="padding:4px 10px;background:transparent;color:var(--text-muted);border:1px solid var(--text-muted);border-radius:4px;font-size:11px;cursor:pointer;">Cancel</button>
+            </div>` : '';
             return `<div class="game-card ${isLive ? 'live' : ''}">
                 <div class="game-date"><span class="game-status ${statusClass}">${statusLabel}</span></div>
-                <div class="game-opponent">vs ${g.opponent || 'TBD'}</div>
+                <div class="game-opponent">${g.eventName || ('vs ' + (g.opponent || 'TBD'))}</div>
                 ${g.location ? `<div class="game-location">📍 ${g.location}</div>` : ''}
                 ${g.notes ? `<div class="game-notes">${g.notes}</div>` : ''}
                 ${score}
                 ${watchBtn}
+                ${managerActions}
             </div>`;
         }).join('');
     } catch (e) {
@@ -1090,6 +1095,21 @@ window.addStreamToEdit = function() {
 window.removeStream = function(idx) {
     editStreams.splice(idx, 1);
     renderEditStreams();
+};
+
+window._deleteScheduleGame = async function(gameId) {
+    if (!confirm('Delete this scheduled game?')) return;
+    try {
+        await deleteDoc(doc(db, 'teams', teamId, 'schedule', gameId));
+        loadSchedule();
+    } catch (e) { console.error('Delete schedule game error:', e); alert('Failed: ' + e.message); }
+};
+
+window._cancelScheduleGame = async function(gameId) {
+    try {
+        await updateDoc(doc(db, 'teams', teamId, 'schedule', gameId), { status: 'cancelled' });
+        loadSchedule();
+    } catch (e) { console.error('Cancel schedule game error:', e); alert('Failed: ' + e.message); }
 };
 
 window.openEditGame = function(gameId, streamOnly = false) {
