@@ -407,13 +407,40 @@ async function loadDashboard() {
                         record = calcRecord(data.sport || data.hub?.sport || '', pastGames.docs.map(d => d.data()));
                     } catch (_) {}
                 }
+                // Fetch next upcoming game
+                let nextGame = null;
+                try {
+                    const schedSnap = await getDocs(query(
+                        collection(db, 'teams', teamId, 'schedule'),
+                        where('status', '==', 'scheduled'),
+                        orderBy('date'), fbLimit(1)
+                    ));
+                    if (!schedSnap.empty) {
+                        const g = schedSnap.docs[0].data();
+                        nextGame = { opponent: g.opponent || g.eventName || '', date: g.date, location: g.location || '' };
+                    }
+                } catch (e) {
+                    // Compound query may need index — try without orderBy
+                    try {
+                        const schedSnap = await getDocs(collection(db, 'teams', teamId, 'schedule'));
+                        const now = Date.now();
+                        const upcoming = schedSnap.docs
+                            .map(d => d.data())
+                            .filter(g => g.status === 'scheduled' && g.date >= now)
+                            .sort((a, b) => a.date - b.date);
+                        if (upcoming.length > 0) {
+                            nextGame = { opponent: upcoming[0].opponent || upcoming[0].eventName || '', date: upcoming[0].date, location: upcoming[0].location || '' };
+                        }
+                    } catch (_) {}
+                }
                 ownedTeams.push({
                     id: teamId,
                     name: data.name || data.hub?.teamName || 'Team',
                     sport: data.sport || data.hub?.sport || '',
                     color: data.color || data.hub?.color || '#FF9640',
                     hubCode: data.hub?.hubCode || '',
-                    record
+                    record,
+                    nextGame
                 });
             } catch (e) { console.error('Error loading team', teamId, e); }
         }
@@ -466,6 +493,19 @@ async function loadDashboard() {
                     isFollowing = subDoc.exists() && subDoc.data().status === 'approved';
                 } catch (_) {}
 
+                // Fetch next upcoming game
+                let nextGame = null;
+                try {
+                    const schedSnap = await getDocs(collection(db, 'teams', teamId, 'schedule'));
+                    const now = Date.now();
+                    const upcoming = schedSnap.docs.map(d => d.data())
+                        .filter(g => g.status === 'scheduled' && g.date >= now)
+                        .sort((a, b) => a.date - b.date);
+                    if (upcoming.length > 0) {
+                        nextGame = { opponent: upcoming[0].opponent || upcoming[0].eventName || '', date: upcoming[0].date, location: upcoming[0].location || '' };
+                    }
+                } catch (_) {}
+
                 const team = {
                     id: teamId,
                     name: data.name || data.hub?.teamName || 'Team',
@@ -473,7 +513,8 @@ async function loadDashboard() {
                     color: data.color || data.hub?.color || '#FF9640',
                     hubCode,
                     record,
-                    isFollowing
+                    isFollowing,
+                    nextGame
                 };
                 if (role === 'manager') managedTeams.push(team);
                 else followedTeams.push(team);
@@ -601,6 +642,11 @@ function teamCard(team, role) {
                     <div class="team-name">${team.name}</div>
                     <div class="team-sport">${sport}</div>
                     ${team.record ? `<div class="team-record">${team.record}</div>` : ''}
+                    ${team.nextGame ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
+                        📅 ${new Date(team.nextGame.date).toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'})}
+                        ${team.nextGame.opponent ? ' — ' + team.nextGame.opponent : ''}
+                        ${team.nextGame.location ? ' 📍 ' + team.nextGame.location : ''}
+                    </div>` : ''}
                     ${actions}
                 </div>
                 <span class="team-role ${roleClass}">${roleLabel}</span>
