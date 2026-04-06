@@ -824,14 +824,36 @@ async function loadPastGames() {
                 const url = g.streamUrl || `/watch.html?code=${g.streamCode}`;
                 streamLinks = `<a href="${url}" target="_blank" style="color:var(--accent);font-size:12px;font-weight:700;text-decoration:none;">▶ Watch Replay</a>`;
             }
+            const isBowling = (g.sport || '').toUpperCase() === 'BOWLING';
+            const ps = g.playerScores || '';
+            let titleLine, scoreLine;
+            if (isBowling) {
+                titleLine = g.eventName || 'Bowling';
+                if (ps) {
+                    // Parse "name:g1,g2,g3:series;..."
+                    scoreLine = ps.split(';').map(b => {
+                        const [name, games, series] = b.split(':');
+                        const scores = (games || '').split(',').filter(s => s).map(Number);
+                        const high = Math.max(...scores, 0);
+                        const prefix = ps.includes(';') && name ? name + ': ' : '';
+                        return `${prefix}${series || 0} series · High: ${high} · ${scores.length} game${scores.length !== 1 ? 's' : ''}<br><span style="font-size:11px;color:var(--text-secondary);">${scores.join(' · ')}</span>`;
+                    }).join('<br>');
+                } else {
+                    scoreLine = g.homeScore > 0 ? `${g.homeScore}` : '';
+                }
+            } else {
+                titleLine = `${g.homeTeam || 'Home'} vs ${g.awayTeam || 'Away'}`;
+                scoreLine = `${g.homeScore} - ${g.awayScore}`;
+            }
             html += `<div class="game-card">
-                <div class="past-game">
-                    <div class="teams">
+                <div class="${isBowling ? '' : 'past-game'}">
+                    <div class="${isBowling ? '' : 'teams'}">
                         <div class="game-date">${formatDate(g.date)}</div>
-                        <div class="game-opponent">${g.homeTeam || 'Home'} vs ${g.awayTeam || 'Away'}</div>
+                        <div class="game-opponent">${titleLine}</div>
+                        ${isBowling && scoreLine ? `<div style="margin-top:6px;color:var(--accent);font-weight:700;font-size:13px;">${scoreLine}</div>` : ''}
                         ${streamLinks ? `<div style="margin-top:4px;">${streamLinks}</div>` : ''}
                     </div>
-                    <div class="score">${g.homeScore} - ${g.awayScore}</div>
+                    ${!isBowling ? `<div class="score">${scoreLine}</div>` : ''}
                 </div>
             </div>`;
         });
