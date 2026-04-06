@@ -121,7 +121,7 @@ html, body {
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, collection, query, where, orderBy, limit as fbLimit, arrayUnion }
+import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, collection, query, where, orderBy, limit as fbLimit, arrayUnion, arrayRemove }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
     GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile }
@@ -392,13 +392,21 @@ async function loadDashboard() {
                     } catch (_) {}
                 }
 
+                // Check follow status
+                let isFollowing = false;
+                try {
+                    const subDoc = await getDoc(doc(db, 'teams', teamId, 'subscribers', uid));
+                    isFollowing = subDoc.exists() && subDoc.data().status === 'approved';
+                } catch (_) {}
+
                 const team = {
                     id: teamId,
                     name: data.name || data.hub?.teamName || 'Team',
                     sport: data.sport || data.hub?.sport || '',
                     color: data.color || data.hub?.color || '#FF9640',
                     hubCode,
-                    record
+                    record,
+                    isFollowing
                 };
                 if (role === 'manager') managedTeams.push(team);
                 else followedTeams.push(team);
@@ -502,8 +510,20 @@ function teamCard(team, role) {
     const emoji = sportEmoji(team.sport.toUpperCase());
     const sport = sportName(team.sport.toUpperCase());
     const roleClass = role === 'owner' ? 'role-owner' : role === 'manager' ? 'role-manager' : 'role-follower';
-    const roleLabel = role === 'owner' ? 'Owner' : role === 'manager' ? 'Manager' : 'Following';
+    const roleLabel = role === 'owner' ? 'Owner' : role === 'manager' ? 'Manager' : team.isFollowing ? 'Following' : 'Not Following';
     const href = team.hubCode ? `team.html?code=${team.hubCode}` : '#';
+
+    let actions = '';
+    if (role !== 'owner') {
+        const followBtn = team.isFollowing
+            ? `<button onclick="event.preventDefault();window._unfollow('${team.id}','${team.hubCode}')" style="padding:4px 10px;background:transparent;color:var(--text-muted);border:1px solid var(--text-muted);border-radius:4px;font-size:11px;cursor:pointer;">Unfollow</button>`
+            : `<button onclick="event.preventDefault();window._follow('${team.id}','${team.hubCode}')" style="padding:4px 10px;background:var(--accent);color:#1A1A1A;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Follow</button>`;
+        actions = `<div style="display:flex;gap:8px;margin-top:6px;">
+            ${followBtn}
+            <button onclick="event.preventDefault();window._removeTeam('${team.hubCode}')" style="padding:4px 10px;background:transparent;color:var(--error);border:1px solid var(--error);border-radius:4px;font-size:11px;cursor:pointer;">Remove</button>
+        </div>`;
+    }
+
     return `
         <a href="${href}" style="text-decoration:none;color:inherit;">
         <div class="team-card">
@@ -514,12 +534,46 @@ function teamCard(team, role) {
                     <div class="team-name">${team.name}</div>
                     <div class="team-sport">${sport}</div>
                     ${team.record ? `<div class="team-record">${team.record}</div>` : ''}
+                    ${actions}
                 </div>
                 <span class="team-role ${roleClass}">${roleLabel}</span>
             </div>
         </div>
         </a>`;
 }
+
+window._follow = async (teamId, hubCode) => {
+    if (!currentUser) return;
+    try {
+        await setDoc(doc(db, 'teams', teamId, 'subscribers', currentUser.uid), {
+            uid: currentUser.uid,
+            displayName: currentUser.displayName || 'User',
+            email: currentUser.email || '',
+            status: 'approved',
+            subscribedAt: Date.now()
+        });
+        loadDashboard();
+    } catch (e) { console.error('Follow error:', e); }
+};
+
+window._unfollow = async (teamId, hubCode) => {
+    if (!currentUser) return;
+    try {
+        await deleteDoc(doc(db, 'teams', teamId, 'subscribers', currentUser.uid));
+        // Keep in subscribedHubs so it stays on dashboard
+        loadDashboard();
+    } catch (e) { console.error('Unfollow error:', e); }
+};
+
+window._removeTeam = async (hubCode) => {
+    if (!currentUser || !confirm('Remove this team from your dashboard?')) return;
+    try {
+        await setDoc(doc(db, 'users', currentUser.uid), {
+            subscribedHubs: arrayRemove(hubCode)
+        }, { merge: true });
+        loadDashboard();
+    } catch (e) { console.error('Remove error:', e); }
+};
 </script>
 </body>
 </html>
