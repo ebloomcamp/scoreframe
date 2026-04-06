@@ -178,6 +178,7 @@ function renderAuth() {
             </button>
             <div class="email-toggle" onclick="window._toggleEmail()">or sign in with email</div>
             <div class="email-form" id="emailForm">
+                <input type="text" id="nameInput" placeholder="Display Name (for new accounts)"><br>
                 <input type="email" id="emailInput" placeholder="Email"><br>
                 <input type="password" id="passInput" placeholder="Password"><br>
                 <button onclick="window._signInEmail()">Sign In</button>
@@ -213,6 +214,11 @@ window._createEmail = async () => {
     try {
         const result = await createUserWithEmailAndPassword(auth, email, pass);
         currentUser = result.user;
+        // Set display name if provided
+        const name = $('nameInput')?.value?.trim();
+        if (name && currentUser) {
+            await updateProfile(currentUser, { displayName: name });
+        }
     } catch (e) { alert(e.message); }
 };
 
