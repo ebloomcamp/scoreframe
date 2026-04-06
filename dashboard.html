@@ -320,7 +320,11 @@ window._declineInvite = async (invId) => {
     } catch (e) { console.error('Decline error:', e); }
 };
 
+// Check if auth is already resolved
+console.log('Auth initial state:', auth.currentUser?.email || 'not signed in');
+
 onAuthStateChanged(auth, async (user) => {
+    console.log('onAuthStateChanged:', user?.email || 'null', user?.isAnonymous ? '(anon)' : '');
     currentUser = user && !user.isAnonymous ? user : null;
     renderAuth();
     if (currentUser) {
