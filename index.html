@@ -588,8 +588,29 @@
     }
 
     /* ── RESPONSIVE ───────────────────────────────────── */
+    /* Mobile menu button */
+    .nav-menu-btn {
+      display: none; background: none; border: none; color: var(--text-primary);
+      font-size: 24px; cursor: pointer; padding: 8px;
+    }
+    .nav-mobile-overlay {
+      display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
+      background: rgba(10,10,12,0.97); z-index: 99; flex-direction: column;
+      align-items: center; padding-top: 40px; gap: 24px;
+    }
+    .nav-mobile-overlay.open { display: flex; }
+    .nav-mobile-overlay a {
+      color: var(--text-secondary); text-decoration: none; font-size: 18px; font-weight: 500;
+    }
+    .nav-mobile-overlay a:hover { color: var(--accent); }
+    .nav-mobile-overlay .nav-cta {
+      background: var(--accent); color: var(--bg-deepest) !important; padding: 10px 28px;
+      border-radius: 8px; font-weight: 600;
+    }
+
     @media (max-width: 768px) {
       .nav-links { display: none; }
+      .nav-menu-btn { display: block; }
       .remote-layout { grid-template-columns: 1fr; }
       .hero { min-height: auto; padding: 140px 24px 80px; }
       section { padding: 64px 24px; }
@@ -610,8 +631,17 @@
       <a href="dashboard.html">Sign In</a>
       <a href="beta.html" class="nav-cta">Join the Beta</a>
     </div>
+    <button class="nav-menu-btn" onclick="document.getElementById('mobileMenu').classList.toggle('open');this.textContent=this.textContent==='☰'?'✕':'☰'" aria-label="Menu">☰</button>
   </div>
 </nav>
+<div class="nav-mobile-overlay" id="mobileMenu">
+  <a href="#features" onclick="document.getElementById('mobileMenu').classList.remove('open')">Features</a>
+  <a href="#sports" onclick="document.getElementById('mobileMenu').classList.remove('open')">Sports</a>
+  <a href="#pricing" onclick="document.getElementById('mobileMenu').classList.remove('open')">Pricing</a>
+  <a href="https://www.reddit.com/r/ScoreFrame/" target="_blank">Community</a>
+  <a href="dashboard.html">Sign In</a>
+  <a href="beta.html" class="nav-cta">Join the Beta</a>
+</div>
 
 <!-- HERO -->
 <section class="hero">
