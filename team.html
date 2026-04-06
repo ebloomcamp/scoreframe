@@ -162,6 +162,50 @@ html, body {
 .player-position { font-size: 11px; color: var(--text-muted); }
 .player-stat { font-size: 11px; color: var(--accent); font-weight: 600; }
 
+/* Manager Edit Controls */
+.game-actions {
+    display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;
+}
+.game-actions button {
+    padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--bg-elevated);
+}
+.edit-btn { background: var(--accent-dim); color: var(--accent); border-color: var(--accent) !important; }
+.delete-btn { background: rgba(244,67,54,0.1); color: var(--error); border-color: var(--error) !important; }
+.stream-btn { background: rgba(76,175,80,0.1); color: var(--success); border-color: var(--success) !important; }
+.edit-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 1000; align-items: center; justify-content: center;
+}
+.edit-overlay.show { display: flex; }
+.edit-modal {
+    background: var(--bg-surface); border-radius: 16px; padding: 24px;
+    width: 90%; max-width: 400px; border: 1px solid var(--bg-elevated);
+}
+.edit-modal h3 { font-size: 16px; margin-bottom: 16px; }
+.edit-row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.edit-row label { font-size: 13px; color: var(--text-secondary); min-width: 60px; }
+.edit-row input {
+    flex: 1; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--bg-elevated); background: var(--bg-deep);
+    color: var(--text-primary); font-size: 14px;
+}
+.edit-row input:focus { outline: none; border-color: var(--accent); }
+.edit-row input[type="number"] { max-width: 80px; text-align: center; }
+.edit-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.edit-actions button {
+    padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer; border: none;
+}
+.save-btn { background: var(--accent); color: #1A1A1A; }
+.save-btn:disabled { opacity: 0.5; }
+.cancel-btn { background: var(--bg-elevated); color: var(--text-secondary); }
+.manager-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; background: var(--accent-dim);
+    color: var(--accent); margin-bottom: 12px;
+}
+
 .footer a { color: var(--accent); text-decoration: none; }
 
 /* Auth Modal */
@@ -270,7 +314,7 @@ html, body {
 
         <!-- Past Games -->
         <div class="section">
-            <div class="section-title">📊 Past Games</div>
+            <div class="section-title">📊 Past Games <span id="managerBadge" style="display:none;" class="manager-badge">MANAGER</span></div>
             <div id="pastGames"></div>
         </div>
     </div>
@@ -303,6 +347,31 @@ html, body {
     </div>
 </div>
 
+<!-- Edit Game Modal -->
+<div class="edit-overlay" id="editOverlay" onclick="if(event.target===this)closeEditModal()">
+    <div class="edit-modal">
+        <h3 id="editTitle">Edit Game</h3>
+        <div class="edit-row">
+            <label>Home</label>
+            <input type="text" id="editHomeTeam" placeholder="Home team">
+            <input type="number" id="editHomeScore" min="0" placeholder="0">
+        </div>
+        <div class="edit-row">
+            <label>Away</label>
+            <input type="text" id="editAwayTeam" placeholder="Away team">
+            <input type="number" id="editAwayScore" min="0" placeholder="0">
+        </div>
+        <div class="edit-row">
+            <label>Stream</label>
+            <input type="url" id="editStreamUrl" placeholder="https://youtube.com/watch?v=...">
+        </div>
+        <div class="edit-actions">
+            <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+            <button class="save-btn" id="editSaveBtn" onclick="saveGameEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
 <div class="footer">
     <div>Powered by <a href="https://scoreframe.app">Score<strong>Frame</strong></a></div>
     <div style="margin-top:8px;"><a href="https://scoreframe.app">Get the app</a> to record games with live scoreboards</div>
@@ -310,7 +379,7 @@ html, body {
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy, where, setDoc, deleteDoc, arrayUnion, arrayRemove, limit as fbLimit }
+import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy, where, setDoc, deleteDoc, updateDoc, arrayUnion, arrayRemove, limit as fbLimit }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getDatabase, ref, onValue }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
@@ -468,6 +537,10 @@ async function checkAccess() {
 
 function showContent() {
     const isPublic = hubProfile.visibility === 'public';
+
+    // Show manager badge if user is a manager
+    const mb = $('managerBadge');
+    if (mb) mb.style.display = isManager ? 'inline-block' : 'none';
 
     if (isPublic) {
         // Public hub: everyone sees content, no gate
@@ -826,6 +899,8 @@ async function loadRoster() {
     }
 }
 
+let pastGamesCache = [];  // Cache for edit operations
+
 async function loadPastGames() {
     try {
         const q2 = query(collection(db, 'teams', teamId, 'games'), orderBy('date', 'desc'), fbLimit(20));
@@ -837,9 +912,11 @@ async function loadPastGames() {
             return;
         }
 
+        pastGamesCache = [];
         let html = '';
         snap.forEach(d => {
-            const g = d.data();
+            const g = { id: d.id, ...d.data() };
+            pastGamesCache.push(g);
             // Collect stream links from streams array or legacy streamUrl/streamCode
             let streamLinks = '';
             const streams = g.streams || [];
@@ -859,7 +936,6 @@ async function loadPastGames() {
             if (isBowling) {
                 titleLine = g.eventName || 'Bowling';
                 if (ps) {
-                    // Parse "name:g1,g2,g3:series;..."
                     scoreLine = ps.split(';').map(b => {
                         const [name, games, storedSeries] = b.split(':');
                         const scores = (games || '').split(',').filter(s => s).map(Number);
@@ -876,7 +952,15 @@ async function loadPastGames() {
                 titleLine = `${g.homeTeam || 'Home'} vs ${g.awayTeam || 'Away'}`;
                 scoreLine = `${g.homeScore} - ${g.awayScore}`;
             }
-            html += `<div class="game-card">
+
+            // Manager actions
+            const actions = isManager ? `<div class="game-actions">
+                <button class="edit-btn" onclick="openEditGame('${g.id}')">✏️ Edit</button>
+                <button class="stream-btn" onclick="openEditGame('${g.id}', true)">📺 Stream</button>
+                <button class="delete-btn" onclick="confirmDeleteGame('${g.id}')">🗑️ Delete</button>
+            </div>` : '';
+
+            html += `<div class="game-card" id="game-${g.id}">
                 <div class="${isBowling ? '' : 'past-game'}">
                     <div class="${isBowling ? '' : 'teams'}">
                         <div class="game-date">${formatDate(g.date)}</div>
@@ -886,12 +970,125 @@ async function loadPastGames() {
                     </div>
                     ${!isBowling ? `<div class="score">${scoreLine}</div>` : ''}
                 </div>
+                ${actions}
             </div>`;
         });
         container.innerHTML = html;
     } catch (e) {
         console.error('Past games error:', e);
         $('pastGames').innerHTML = '<div class="empty">Unable to load past games</div>';
+    }
+}
+
+// ── Manager: Edit Game ──
+
+let editingGameId = null;
+
+window.openEditGame = function(gameId, streamOnly = false) {
+    const game = pastGamesCache.find(g => g.id === gameId);
+    if (!game) return;
+    editingGameId = gameId;
+
+    $('editTitle').textContent = streamOnly ? 'Add Stream Link' : 'Edit Game';
+    $('editHomeTeam').value = game.homeTeam || '';
+    $('editHomeScore').value = game.homeScore || 0;
+    $('editAwayTeam').value = game.awayTeam || '';
+    $('editAwayScore').value = game.awayScore || 0;
+
+    // Show existing stream URL if any
+    const streams = game.streams || [];
+    const existingUrl = streams.length > 0 ? streams[0].url : (game.streamUrl || '');
+    $('editStreamUrl').value = existingUrl;
+
+    // If stream-only, focus the stream field
+    if (streamOnly) {
+        $('editHomeTeam').parentElement.style.display = 'none';
+        $('editAwayTeam').parentElement.style.display = 'none';
+        setTimeout(() => $('editStreamUrl').focus(), 100);
+    } else {
+        $('editHomeTeam').parentElement.style.display = '';
+        $('editAwayTeam').parentElement.style.display = '';
+    }
+
+    $('editOverlay').classList.add('show');
+};
+
+window.closeEditModal = function() {
+    $('editOverlay').classList.remove('show');
+    editingGameId = null;
+    // Restore hidden rows
+    $('editHomeTeam').parentElement.style.display = '';
+    $('editAwayTeam').parentElement.style.display = '';
+};
+
+window.saveGameEdit = async function() {
+    if (!editingGameId || !teamId || !isManager) return;
+    const btn = $('editSaveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+        const updates = {
+            homeTeam: $('editHomeTeam').value.trim() || '',
+            awayTeam: $('editAwayTeam').value.trim() || '',
+            homeScore: parseInt($('editHomeScore').value) || 0,
+            awayScore: parseInt($('editAwayScore').value) || 0,
+            updatedAt: Date.now()
+        };
+
+        // Handle stream URL
+        const streamUrl = $('editStreamUrl').value.trim();
+        if (streamUrl) {
+            // Detect platform from URL
+            let platform = 'custom';
+            if (streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be')) platform = 'youtube';
+            else if (streamUrl.includes('twitch.tv')) platform = 'twitch';
+            else if (streamUrl.includes('facebook.com')) platform = 'facebook';
+            updates.streams = [{ url: streamUrl, platform, addedAt: Date.now() }];
+            updates.streamUrl = streamUrl;  // Legacy field
+        }
+
+        await updateDoc(doc(db, 'teams', teamId, 'games', editingGameId), updates);
+
+        // Update local cache
+        const cached = pastGamesCache.find(g => g.id === editingGameId);
+        if (cached) Object.assign(cached, updates);
+
+        closeEditModal();
+        loadPastGames();  // Refresh list
+    } catch (e) {
+        console.error('Save error:', e);
+        alert('Failed to save: ' + e.message);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Save';
+};
+
+// ── Manager: Delete Game ──
+
+window.confirmDeleteGame = function(gameId) {
+    const game = pastGamesCache.find(g => g.id === gameId);
+    if (!game) return;
+    const title = game.homeTeam && game.awayTeam
+        ? `${game.homeTeam} vs ${game.awayTeam}`
+        : 'this game';
+    if (!confirm(`Delete ${title}? This cannot be undone.`)) return;
+    deleteGame(gameId);
+};
+
+async function deleteGame(gameId) {
+    if (!teamId || !isManager) return;
+    try {
+        await deleteDoc(doc(db, 'teams', teamId, 'games', gameId));
+        pastGamesCache = pastGamesCache.filter(g => g.id !== gameId);
+        const card = document.getElementById('game-' + gameId);
+        if (card) card.remove();
+        if (pastGamesCache.length === 0) {
+            $('pastGames').innerHTML = '<div class="empty">No past games yet</div>';
+        }
+    } catch (e) {
+        console.error('Delete error:', e);
+        alert('Failed to delete: ' + e.message);
     }
 }
 
