@@ -277,11 +277,14 @@ html, body {
         <div id="liveBadge" style="display:none;" class="live-badge">● LIVE NOW</div>
         <div class="team-code" id="teamCode"></div>
 
-        <!-- User bar: sign-in / follow / account -->
-        <div class="user-bar" id="userBar">
-            <button class="sign-in-btn" onclick="doSignIn()">Sign In</button>
-        </div>
+        <!-- Follow button (under team info) -->
+        <div id="followArea" style="margin-top:12px;"></div>
         <div class="follow-status" id="followStatus"></div>
+    </div>
+
+    <!-- Account bar (top of page, above team header) -->
+    <div id="accountBar" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:8px 16px;background:var(--bg-deep);border-bottom:1px solid var(--bg-elevated);flex-wrap:wrap;">
+        <button class="sign-in-btn" onclick="doSignIn()" style="font-size:12px;padding:6px 14px;">Sign In</button>
     </div>
 
     <!-- Access Gate (private/invite-only hubs — requires sign-in) -->
@@ -604,20 +607,28 @@ function showContent() {
 }
 
 function updateUserBar() {
-    const bar = $('userBar');
+    const accountBar = $('accountBar');
+    const followArea = $('followArea');
     const isPublic = hubProfile && hubProfile.visibility === 'public';
 
     if (!currentUser) {
-        // Show sign-in button (unless already shown in gate)
-        bar.innerHTML = `<button class="sign-in-btn" onclick="doSignIn()">Sign In</button>`;
-        $('followStatus').textContent = isPublic ? '' : '';
+        accountBar.innerHTML = `
+            <button class="sign-in-btn" onclick="doSignIn()" style="font-size:12px;padding:6px 14px;">Sign In</button>
+            <button class="sign-in-btn" onclick="doSignIn()" style="font-size:12px;padding:6px 14px;background:var(--accent);color:#1A1A1A;">Sign Up</button>`;
+        if (followArea) followArea.innerHTML = '';
+        $('followStatus').textContent = '';
         return;
     }
 
-    // Signed in — show user info + follow button (for public hubs) or status
+    // Account bar — user info + dashboard + sign out
     const photo = currentUser.photoURL ? `<img class="user-photo" src="${currentUser.photoURL}" alt="">` : '';
     const name = currentUser.displayName || currentUser.email || 'User';
+    accountBar.innerHTML = `
+        <div class="user-info" style="flex:1;">${photo} ${name}</div>
+        <a href="dashboard.html" style="color:var(--accent);font-size:12px;font-weight:600;text-decoration:none;">My Dashboard</a>
+        <button class="sign-out-btn" onclick="doSignOut()">Sign out</button>`;
 
+    // Follow area — under team info
     let followBtn = '';
     let statusText = '';
 
@@ -630,16 +641,10 @@ function updateUserBar() {
     } else if (subStatus === 'blocked') {
         // Don't show anything
     } else if (isPublic) {
-        // Public hub — user can follow for notifications
         followBtn = `<button class="follow-btn" onclick="doFollow()">Follow Team</button>`;
     }
-    // Private hubs: follow/request is handled by the access gate, not the user bar
 
-    bar.innerHTML = `
-        <div class="user-info">${photo} ${name}</div>
-        ${followBtn}
-        <a href="dashboard.html" class="sign-out-btn" style="text-decoration:none;">My Dashboard</a>
-        <button class="sign-out-btn" onclick="doSignOut()">Sign out</button>`;
+    if (followArea) followArea.innerHTML = followBtn;
     $('followStatus').textContent = statusText;
 }
 
