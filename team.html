@@ -923,10 +923,13 @@ async function loadPastGames() {
             if (streams.length > 0) {
                 streamLinks = streams.map((s, i) => {
                     if (!s.url) return '';
-                    if (s.platform === 'youtube') {
+                    if (s.platform === 'youtube' || s.url.includes('youtube.com') || s.url.includes('youtu.be')) {
                         return `<a href="${s.url}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;text-decoration:none;color:#FF0000;font-size:12px;font-weight:700;"><svg width="20" height="14" viewBox="0 0 24 17"><path fill="#FF0000" d="M23.5 2.5A3 3 0 0 0 21.4.4C19.5 0 12 0 12 0S4.5 0 2.6.4A3 3 0 0 0 .5 2.5 31 31 0 0 0 0 8.5a31 31 0 0 0 .5 6A3 3 0 0 0 2.6 16.6C4.5 17 12 17 12 17s7.5 0 9.4-.4a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-6 31 31 0 0 0-.5-6z"/><path fill="#FFF" d="M9.6 12.2l6.3-3.7-6.3-3.7z"/></svg> YouTube</a>`;
                     }
-                    const label = s.platform === 'twitch' ? '▶ Twitch' : `▶ Stream ${i+1}`;
+                    if (s.platform === 'google_photos' || s.url.includes('photos.app.goo.gl') || s.url.includes('photos.google.com')) {
+                        return `<a href="${s.url}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;text-decoration:none;color:#4285F4;font-size:12px;font-weight:700;"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#FBBC04" d="M12 12V2.6c0-.9-.4-1.7-1-2.3A3.3 3.3 0 0 0 8.7-.7C6.5-.4 5 1.5 5 3.7V12h7z"/><path fill="#EA4335" d="M12 12h9.4c.9 0 1.7-.4 2.3-1 .6-.7.9-1.5.7-2.3-.3-2.2-2.2-3.7-4.4-3.7H12v7z"/><path fill="#4285F4" d="M12 12v9.4c0 .9.4 1.7 1 2.3.7.6 1.5.9 2.3.7 2.2-.3 3.7-2.2 3.7-4.4V12h-7z"/><path fill="#34A853" d="M12 12H2.6c-.9 0-1.7.4-2.3 1-.6.7-.9 1.5-.7 2.3.3 2.2 2.2 3.7 4.4 3.7H12v-7z"/></svg> Google Photos</a>`;
+                    }
+                    const label = s.platform === 'twitch' ? '▶ Twitch' : s.platform === 'facebook' ? '▶ Facebook' : `▶ Stream ${i+1}`;
                     return `<a href="${s.url}" target="_blank" style="color:var(--accent);font-size:12px;font-weight:700;margin-right:12px;text-decoration:none;">${label}</a>`;
                 }).join('');
             } else if (g.streamUrl || g.streamCode) {
