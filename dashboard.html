@@ -277,12 +277,27 @@ async function loadDashboard() {
 
     try {
         // Check for pending invitations
-        const invSnap = await getDocs(query(
-            collection(db, 'invitations'),
-            where('email', '==', email.toLowerCase().trim()),
-            where('status', '==', 'pending')
-        ));
-        const pendingInvitations = invSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        let pendingInvitations = [];
+        try {
+            const invSnap = await getDocs(query(
+                collection(db, 'invitations'),
+                where('email', '==', email.toLowerCase().trim()),
+                where('status', '==', 'pending')
+            ));
+            pendingInvitations = invSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) {
+            console.warn('Invitations query failed (may need Firestore index):', e.message);
+            // Fallback: query by email only, filter status client-side
+            try {
+                const invSnap = await getDocs(query(
+                    collection(db, 'invitations'),
+                    where('email', '==', email.toLowerCase().trim())
+                ));
+                pendingInvitations = invSnap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(inv => inv.status === 'pending');
+            } catch (e2) { console.warn('Invitations fallback also failed:', e2.message); }
+        }
 
         // Get subscribed hub codes
         const userDoc = await getDoc(doc(db, 'users', uid));
@@ -302,11 +317,20 @@ async function loadDashboard() {
                 const teamDoc = await getDoc(doc(db, 'teams', teamId));
                 if (!teamDoc.exists()) continue;
                 const data = teamDoc.data();
-                const pastGames = await getDocs(query(
-                    collection(db, 'teams', teamId, 'games'),
-                    orderBy('date', 'desc'), fbLimit(50)
-                ));
-                const record = calcRecord(data.sport || data.hub?.sport || '', pastGames.docs.map(d => d.data()));
+                let record = '';
+                try {
+                    const pastGames = await getDocs(query(
+                        collection(db, 'teams', teamId, 'games'),
+                        orderBy('date', 'desc'), fbLimit(50)
+                    ));
+                    record = calcRecord(data.sport || data.hub?.sport || '', pastGames.docs.map(d => d.data()));
+                } catch (e) {
+                    // Games query may fail without index — show team without record
+                    try {
+                        const pastGames = await getDocs(collection(db, 'teams', teamId, 'games'));
+                        record = calcRecord(data.sport || data.hub?.sport || '', pastGames.docs.map(d => d.data()));
+                    } catch (_) {}
+                }
                 ownedTeams.push({
                     id: teamId,
                     name: data.name || data.hub?.teamName || 'Team',
@@ -345,11 +369,19 @@ async function loadDashboard() {
                     if (!mgrQuery.empty) role = 'manager';
                 }
 
-                const pastGames = await getDocs(query(
-                    collection(db, 'teams', teamId, 'games'),
-                    orderBy('date', 'desc'), fbLimit(50)
-                ));
-                const record = calcRecord(data.sport || data.hub?.sport || '', pastGames.docs.map(d => d.data()));
+                let record = '';
+                try {
+                    const pastGames = await getDocs(query(
+                        collection(db, 'teams', teamId, 'games'),
+                        orderBy('date', 'desc'), fbLimit(50)
+                    ));
+                    record = calcRecord(data.sport || data.hub?.sport || '', pastGames.docs.map(d => d.data()));
+                } catch (e) {
+                    try {
+                        const pastGames = await getDocs(collection(db, 'teams', teamId, 'games'));
+                        record = calcRecord(data.sport || data.hub?.sport || '', pastGames.docs.map(d => d.data()));
+                    } catch (_) {}
+                }
 
                 const team = {
                     id: teamId,
@@ -420,7 +452,7 @@ async function loadDashboard() {
 
     } catch (e) {
         console.error('Dashboard error:', e);
-        content.innerHTML = `<div class="empty-state">Error loading dashboard. Please try again.</div>`;
+        content.innerHTML = `<div class="empty-state">Error loading dashboard: ${e.message}<br><br>Please try refreshing the page.</div>`;
     }
 }
 
