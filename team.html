@@ -845,7 +845,10 @@ async function loadSchedule() {
         const upcoming = [];
         snap.forEach(d => {
             const game = { id: d.id, ...d.data() };
-            upcoming.push(game);
+            // Only show games that aren't completed or cancelled
+            if (game.status !== 'completed' && game.status !== 'cancelled') {
+                upcoming.push(game);
+            }
         });
 
         const container = $('upcomingGames');
@@ -860,7 +863,10 @@ async function loadSchedule() {
             const statusLabel = isLive ? '● LIVE' : g.status === 'completed' ? 'Final' : formatDate(g.date);
             const watchUrl = g.streamUrl || (g.streamCode ? `/watch.html?code=${g.streamCode}` : '');
             const watchBtn = isLive && watchUrl ? `<a class="watch-btn" href="${watchUrl}" target="_blank">▶ Watch Live</a>` : '';
-            const score = g.status === 'completed' ? `<div class="game-score">${g.homeScore} - ${g.awayScore}</div>` : '';
+            const isBowling = (g.sport || '').toLowerCase().includes('bowling');
+            const score = g.status === 'completed' ? (isBowling && g.playerScores
+                ? `<div class="game-score">${g.playerScores}</div>`
+                : `<div class="game-score">${g.homeScore} - ${g.awayScore}</div>`) : '';
             const managerActions = isManager ? `<div style="margin-top:8px;display:flex;gap:8px;">
                 <button onclick="window._deleteScheduleGame('${g.id}')" style="padding:4px 10px;background:transparent;color:var(--error);border:1px solid var(--error);border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>
                 <button onclick="window._cancelScheduleGame('${g.id}')" style="padding:4px 10px;background:transparent;color:var(--text-muted);border:1px solid var(--text-muted);border-radius:4px;font-size:11px;cursor:pointer;">Cancel</button>
