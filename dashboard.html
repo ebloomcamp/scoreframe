@@ -124,7 +124,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, collection, query, where, orderBy, limit as fbLimit, arrayUnion, arrayRemove }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile }
+    GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -185,10 +185,11 @@ function renderAuth() {
             </div>
             <div class="email-form" id="emailForm">
                 <div id="emailFormTitle" style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Sign In</div>
-                <input type="text" id="nameInput" placeholder="Display Name" style="display:none;"><br id="nameBr" style="display:none;">
-                <input type="email" id="emailInput" placeholder="Email"><br>
-                <input type="password" id="passInput" placeholder="Password"><br>
+                <input type="text" id="nameInput" placeholder="Display Name" autocomplete="name" style="display:none;"><br id="nameBr" style="display:none;">
+                <input type="email" id="emailInput" placeholder="Email" autocomplete="email"><br>
+                <input type="password" id="passInput" placeholder="Password" autocomplete="current-password"><br>
                 <button id="emailSubmitBtn" onclick="window._signInEmail()">Sign In</button>
+                <div id="forgotPassLink" style="font-size:12px;color:var(--accent);margin-top:6px;cursor:pointer;" onclick="window._forgotPassword()">Forgot password?</div>
                 <div id="emailToggleLink" style="font-size:13px;color:var(--accent);margin-top:8px;cursor:pointer;font-weight:600;" onclick="window._switchAuthMode()">Don't have an account? <strong>Sign Up</strong></div>
             </div>`;
     }
@@ -203,9 +204,11 @@ window._showSignIn = () => {
     $('emailFormTitle').textContent = 'Sign In';
     $('nameInput').style.display = 'none';
     if ($('nameBr')) $('nameBr').style.display = 'none';
+    $('passInput').autocomplete = 'current-password';
     $('emailSubmitBtn').textContent = 'Sign In';
     $('emailSubmitBtn').onclick = window._signInEmail;
     $('emailToggleLink').innerHTML = "Don't have an account? <strong>Sign Up</strong>";
+    $('forgotPassLink').style.display = '';
 };
 
 window._showSignUp = () => {
@@ -215,14 +218,34 @@ window._showSignUp = () => {
     $('emailFormTitle').textContent = 'Create Account';
     $('nameInput').style.display = '';
     if ($('nameBr')) $('nameBr').style.display = '';
+    $('passInput').autocomplete = 'new-password';
     $('emailSubmitBtn').textContent = 'Create Account';
     $('emailSubmitBtn').onclick = window._createEmail;
     $('emailToggleLink').innerHTML = "Already have an account? <strong>Sign In</strong>";
+    $('forgotPassLink').style.display = 'none';
 };
 
 window._switchAuthMode = () => {
     if (isSignUpMode) window._showSignIn();
     else window._showSignUp();
+};
+
+window._forgotPassword = async () => {
+    const email = $('emailInput').value.trim();
+    if (!email || !email.includes('@')) {
+        alert('Enter your email address first, then click "Forgot password?"');
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        alert('Password reset email sent to ' + email + '. Check your inbox.');
+    } catch (e) {
+        if (e.message.includes('user-not-found')) {
+            alert('No account found with that email.');
+        } else {
+            alert('Error: ' + e.message);
+        }
+    }
 };
 
 window._signInGoogle = async () => {
