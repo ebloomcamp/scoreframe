@@ -185,7 +185,7 @@ function renderAuth() {
             </div>
             <div class="email-form" id="emailForm">
                 <div id="emailFormTitle" style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Sign In</div>
-                <input type="text" id="nameInput" placeholder="Display Name" autocomplete="name" style="display:none;"><br id="nameBr" style="display:none;">
+                <input type="text" id="nameInput" placeholder="Display Name" autocomplete="off" data-lpignore="true" data-form-type="other" style="display:none;"><br id="nameBr" style="display:none;">
                 <input type="email" id="emailInput" placeholder="Email" autocomplete="email"><br>
                 <input type="password" id="passInput" placeholder="Password" autocomplete="current-password"><br>
                 <button id="emailSubmitBtn" onclick="window._signInEmail()">Sign In</button>
