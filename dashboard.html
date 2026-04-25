@@ -169,6 +169,7 @@ function renderAuth() {
         area.innerHTML = `
             <div class="user-info">
                 ${photo} ${name}
+                <button class="sign-out-btn" onclick="window._changePassword()" style="background:var(--accent);color:#1A1A1A;">Change Password</button>
                 <button class="sign-out-btn" onclick="window._signOut()">Sign Out</button>
             </div>`;
     } else {
@@ -320,6 +321,25 @@ window._createEmail = async () => {
         } else {
             alert(e.message);
         }
+    }
+};
+
+window._changePassword = async () => {
+    if (!currentUser || !currentUser.email) {
+        alert('No email associated with this account. If you signed in with Google, your password is managed by Google.');
+        return;
+    }
+    // Check if user signed in with Google only (no password provider)
+    const hasPassword = currentUser.providerData.some(p => p.providerId === 'password');
+    if (!hasPassword) {
+        alert('Your account uses Google Sign-In. To set a password, click "Forgot password?" on the sign-in page and enter your email.');
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, currentUser.email);
+        alert('Password reset email sent to ' + currentUser.email + '. Check your inbox to set a new password.');
+    } catch (e) {
+        alert('Error: ' + e.message);
     }
 };
 
