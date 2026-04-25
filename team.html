@@ -342,8 +342,10 @@ html, body {
         <div id="emailForm">
             <input class="auth-input" type="email" id="authEmail" placeholder="Email address" autocomplete="email">
             <input class="auth-input" type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
-            <input class="auth-input" type="text" id="authName" placeholder="Display name" style="display:none;" autocomplete="name">
+            <input class="auth-input" type="password" id="authConfirmPassword" placeholder="Confirm password" autocomplete="new-password" style="display:none;">
+            <input class="auth-input" type="text" id="authName" placeholder="Display name" style="display:none;" autocomplete="off" data-lpignore="true">
             <button class="auth-submit" id="authSubmit" onclick="doEmailSignIn()">Sign In</button>
+            <div id="forgotLink" style="font-size:12px;color:var(--accent,#FF9640);margin-top:6px;cursor:pointer;text-align:center;" onclick="doForgotPassword()">Forgot password?</div>
             <div class="auth-toggle" id="authToggle">
                 Don't have an account? <a onclick="toggleAuthMode()">Create one</a>
             </div>
@@ -397,7 +399,7 @@ import { getFirestore, doc, getDoc, collection, getDocs, query, orderBy, where, 
 import { getDatabase, ref, onValue }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getAuth, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile }
+    GoogleAuthProvider, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail }
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -617,7 +619,7 @@ function updateUserBar() {
     if (!currentUser) {
         accountBar.innerHTML = `${logo}
             <button class="sign-in-btn" onclick="doSignIn()" style="font-size:12px;padding:6px 14px;">Sign In</button>
-            <button class="sign-in-btn" onclick="doSignIn()" style="font-size:12px;padding:6px 14px;background:var(--accent);color:#1A1A1A;">Sign Up</button>`;
+            <button class="sign-in-btn" onclick="doSignUp()" style="font-size:12px;padding:6px 14px;background:var(--accent);color:#1A1A1A;">Sign Up</button>`;
         if (followArea) followArea.innerHTML = '';
         $('followStatus').textContent = '';
         return;
@@ -666,13 +668,27 @@ function renderHeader() {
 let isCreateMode = false;
 
 window.doSignIn = function() {
-    // Open auth modal
     $('authOverlay').classList.add('show');
     $('authError').textContent = '';
     isCreateMode = false;
     $('authSubmit').textContent = 'Sign In';
     $('authName').style.display = 'none';
+    $('authConfirmPassword').style.display = 'none';
+    $('authPassword').autocomplete = 'current-password';
+    $('forgotLink').style.display = '';
     $('authToggle').innerHTML = 'Don\'t have an account? <a onclick="toggleAuthMode()">Create one</a>';
+};
+
+window.doSignUp = function() {
+    $('authOverlay').classList.add('show');
+    $('authError').textContent = '';
+    isCreateMode = true;
+    $('authSubmit').textContent = 'Create Account';
+    $('authName').style.display = 'block';
+    $('authConfirmPassword').style.display = 'block';
+    $('authPassword').autocomplete = 'new-password';
+    $('forgotLink').style.display = 'none';
+    $('authToggle').innerHTML = 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>';
 };
 
 window.closeAuth = function() {
@@ -686,11 +702,32 @@ window.toggleAuthMode = function() {
     if (isCreateMode) {
         $('authSubmit').textContent = 'Create Account';
         $('authName').style.display = 'block';
+        $('authConfirmPassword').style.display = 'block';
+        $('authPassword').autocomplete = 'new-password';
+        $('forgotLink').style.display = 'none';
         $('authToggle').innerHTML = 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>';
     } else {
         $('authSubmit').textContent = 'Sign In';
         $('authName').style.display = 'none';
+        $('authConfirmPassword').style.display = 'none';
+        $('authPassword').autocomplete = 'current-password';
+        $('forgotLink').style.display = '';
         $('authToggle').innerHTML = 'Don\'t have an account? <a onclick="toggleAuthMode()">Create one</a>';
+    }
+};
+
+window.doForgotPassword = async function() {
+    const email = $('authEmail').value.trim();
+    if (!email || !email.includes('@')) {
+        $('authError').textContent = 'Enter your email address first, then click "Forgot password?"';
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        $('authError').textContent = '';
+        alert('Password reset email sent to ' + email + '. Check your inbox.');
+    } catch (e) {
+        $('authError').textContent = e.message.includes('user-not-found') ? 'No account found with that email.' : 'Error: ' + e.message;
     }
 };
 
@@ -723,6 +760,10 @@ window.doEmailSignIn = async function() {
     }
     if (isCreateMode && password.length < 6) {
         $('authError').textContent = 'Password must be at least 6 characters.';
+        return;
+    }
+    if (isCreateMode && password !== $('authConfirmPassword').value) {
+        $('authError').textContent = 'Passwords do not match.';
         return;
     }
 
