@@ -448,7 +448,9 @@ function formatDate(ts) {
 }
 
 // ── Init ──
-hubCode = new URLSearchParams(location.search).get('code') || location.pathname.split('/').pop();
+// Accept ?code= (canonical) or ?hub= (older email links)
+const _params = new URLSearchParams(location.search);
+hubCode = _params.get('code') || _params.get('hub') || location.pathname.split('/').pop();
 if (!hubCode || hubCode.length < 4) {
     $('loadingScreen').style.display = 'none';
     $('notFoundScreen').style.display = 'block';
@@ -469,11 +471,60 @@ if (!hubCode || hubCode.length < 4) {
                     name: df()
                 }, { merge: true });
             } catch (e) { console.error('User doc error:', e); }
+            await autoAcceptFollowerInvitations();
         }
-        // If page is already loaded, update the user bar
-        if (hubProfile) updateUserBar();
+        // If page is already loaded, update the user bar (and re-check access since invites may now be accepted)
+        if (hubProfile) {
+            if (currentUser) await checkAccess();
+            updateUserBar();
+            showContent();
+        }
     });
     loadTeam();
+}
+
+// Auto-accept any pending follower invitations addressed to the signed-in user's email.
+// Adds them to teams/{teamId}/subscribers as approved + marks invitation accepted.
+// Only role="follower" is processed here; manager invites still require explicit Accept on the dashboard.
+async function autoAcceptFollowerInvitations() {
+    if (!currentUser?.email) return;
+    const email = currentUser.email.toLowerCase().trim();
+    try {
+        const { getDocs, query, collection, where, setDoc, doc: fbDoc, updateDoc, arrayUnion } =
+            await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        const snap = await getDocs(query(
+            collection(db, 'invitations'),
+            where('email', '==', email),
+            where('status', '==', 'pending')
+        ));
+        for (const inv of snap.docs) {
+            const data = inv.data();
+            if ((data.role || '') !== 'follower') continue;
+            const inviteTeamId = data.teamId;
+            const inviteHubCode = data.hubCode || '';
+            if (!inviteTeamId) continue;
+            try {
+                await setDoc(fbDoc(db, 'teams', inviteTeamId, 'subscribers', currentUser.uid), {
+                    uid: currentUser.uid,
+                    name: currentUser.displayName || email.split('@')[0],
+                    email,
+                    status: 'approved',
+                    requestedAt: Date.now(),
+                    approvedAt: Date.now()
+                }, { merge: true });
+                if (inviteHubCode) {
+                    await setDoc(fbDoc(db, 'users', currentUser.uid),
+                        { subscribedHubs: arrayUnion(inviteHubCode) }, { merge: true });
+                }
+                await updateDoc(fbDoc(db, 'invitations', inv.id), { status: 'accepted' });
+                console.log('Auto-accepted follower invite for', email, '→ team', inviteTeamId);
+            } catch (e) {
+                console.error('Failed to auto-accept follower invite', inv.id, e);
+            }
+        }
+    } catch (e) {
+        console.error('autoAcceptFollowerInvitations failed:', e);
+    }
 }
 
 async function loadTeam() {
