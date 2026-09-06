@@ -10,3 +10,5 @@
 # the noindex. Allow the crawl, refuse the index.
 User-agent: *
 Allow: /
+
+Sitemap: https://scoreframe.app/sitemap.xml
